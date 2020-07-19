@@ -1,4 +1,4 @@
-require('dotenv/config');
+require("dotenv/config")
 module.exports = {
   database: {
     mysql: {
@@ -8,5 +8,5 @@ module.exports = {
       database: process.env.DB_NAME
     }
   },
-  port: process.env.PORT,
+  port: process.env.PORT
 }

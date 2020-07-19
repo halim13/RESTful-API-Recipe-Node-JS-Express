@@ -1,111 +1,111 @@
-const connection = require('../configs/db');
+const connection = require("../configs/db")
 module.exports = {
-  auth: (id) => {
+  auth: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.name, a.email, a.avatar, a.bio FROM users a WHERE a.id = '${id}'`;
+      const query = `SELECT a.id, a.uuid, a.name, a.email, a.avatar, a.bio FROM users a WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
-          reject(new Error(error));
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  checkName: (name) => {
+  checkName: name => {
     return new Promise((resolve, reject) => {
-      const query  = `SELECT a.name FROM users a WHERE LOWER(a.name) = '${name}'`;
+      const query = `SELECT a.name FROM users a WHERE LOWER(a.name) = '${name}'`
       connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error));
+        if (error) {
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  checkEmail: (email) => {
+  checkEmail: email => {
     return new Promise((resolve, reject) => {
-      const query  = `SELECT a.email FROM users a WHERE a.email = '${email}'`;
+      const query = `SELECT a.email FROM users a WHERE a.email = '${email}'`
       connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error));
+        if (error) {
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  checkAvatarExists: (userId) => {
+  checkAvatarExists: userId => {
     return new Promise((resolve, reject) => {
-      const query  = `SELECT a.avatar FROM users a WHERE a.id = '${userId}'`;
+      const query = `SELECT a.avatar FROM users a WHERE a.id = '${userId}'`
       connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error));
+        if (error) {
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  getUser: (email) => {
+  getUser: email => {
     return new Promise((resolve, reject) => {
-      const query  = `SELECT a.* FROM users a WHERE a.email = '${email}'`;
+      const query = `SELECT a.* FROM users a WHERE a.email = '${email}'`
       connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error));
+        if (error) {
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  getProfile: (userId) => {
+  getProfile: uuid => {
     return new Promise((resolve, reject) => {
-      const query  = `SELECT a.* FROM users a WHERE a.id = '${userId}'`;
+      const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error));
+        if (error) {
+          reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  login: (email) => {
+  login: email => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.password FROM users a WHERE email = ?`;
+      const query = `SELECT a.id, a.uuid, a.password FROM users a WHERE email = ?`
       connection.query(query, email, (error, result) => {
         if (error) {
           reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
-  register: (data) => {
+  register: data => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO users SET ?`;
+      const query = `INSERT INTO users SET ?`
       connection.query(query, data, (error, result) => {
-        if(error) {
-          reject(new Error(error));
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  },
-  updateProfile: (data, id) => {
-    return new Promise((resolve, reject) => {
-      const query = `UPDATE users SET ? WHERE id = ?`;
-      connection.query(query, [data, id], (error, result) => {
         if (error) {
           reject(new Error(error))
         } else {
-          resolve(result);
+          resolve(result)
         }
-      });
-    });
+      })
+    })
   },
+  updateProfile: (data, uuid) => {
+    return new Promise((resolve, reject) => {
+      const query = `UPDATE users SET ? WHERE uuid = ?`
+      connection.query(query, [data, uuid], (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  }
 }

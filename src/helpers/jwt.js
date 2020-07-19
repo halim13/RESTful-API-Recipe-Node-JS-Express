@@ -2,7 +2,7 @@ require('dotenv').config();
 const misc = require('../helpers/response');
 const jwt = require('jsonwebtoken');
 module.exports = function(request, response, next) {
-  const token = request.header('x-auth-token');
+  const token = request.body.token || request.query.token || request.header('x-auth-token');
   if (!token) {
     return misc.response(response, 401, true, 'No token, authorization denied.');
   }
@@ -12,10 +12,11 @@ module.exports = function(request, response, next) {
         misc.response(response, 401, true, 'Token is not valid.');
       }
       else {
-        request.user = decoded.user;
+        // request.user = decoded.user; // If you want specify getting request
+        request.decoded = decoded;
         next();
       }
-    })
+    });
   }
   catch (error) {
     console.log(error.message); // in-development
