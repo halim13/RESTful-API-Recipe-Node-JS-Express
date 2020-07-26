@@ -5,7 +5,17 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app"
+    "start": "nodemon app",
+    "sequelize:model:create:test": "sequelize model:create --name tests --attributes name:string,email:string,phone_number:string,gender:boolean",
+    "sequelize:db:migrate": "sequelize db:migrate",
+    "sequelize:init": "sequelize init",
+    "sequelize:init:config": "sequelize init:config",
+    "sequelize:init:migrations": "sequelize init:migrations",
+    "sequelize:init:models": "sequelize init:models",
+    "sequelize:init:seeders": "sequelize init:seeders",
+    "sequelize:migration:generate": "sequelize migration:generate",
+    "sequelize:model:generate": "sequelize model:generate",
+    "sequelize:seed:generate": "sequelize seed:generate"
   },
   "keywords": [],
   "author": "",
@@ -16,14 +26,15 @@
     "connect-busboy": "0.0.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "express-fileupload": "^1.1.7-alpha.3",
-    "fs-extra": "^9.0.0",
+    "express-fileupload": "^1.1.7-alpha.4",
+    "fs-extra": "^9.0.1",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
     "mysql": "^2.18.1",
     "path": "^0.12.7",
-    "uuid": "^8.0.0"
+    "sequelize": "^6.2.4",
+    "uuid": "^8.2.0"
   }
 }
