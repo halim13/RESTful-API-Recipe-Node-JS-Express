@@ -48,10 +48,37 @@ module.exports = {
       const recipes = await Recipe.detail(id)
       const ingredients = await Recipe.ingredients(id)
       const steps = await Recipe.steps(id)
+      let stepsData = []
+
+
+      function stepsImages(i) {
+        let stepsImagesData = []
+        let t1 = steps[i].steps_images_id == null ? (stepsImagesData = []) : steps[i].steps_images_id.split(",")
+        let t2 = steps[i].steps_images_body == null ? (stepsImagesData = []) : steps[i].steps_images_body.split(",")
+        for (let z = 0; z < t1.length; z++) {
+          stepsImagesData.push({
+            uuid: t1[z],
+            body: t2[z]
+          })
+        }
+        let result = stepsImagesData.sort(function(a, b) {
+          return parseInt(a.id) - parseInt(b.id);
+        });
+        return result
+      }
+
+      for (let i = 0; i < steps.length; i++) {
+        stepsData.push({
+          uuid: steps[i].uuid,
+          body: steps[i].body,
+          stepsImages: stepsImages(i)
+        })
+      }
+
       const payload = {
         recipes,
         ingredients,
-        steps
+        steps: stepsData
       }
       misc.response(response, 200, false, null, payload)
     } catch (error) {
@@ -100,9 +127,13 @@ module.exports = {
   edit: async (request, response) => {
     const recipeId = request.params.recipeId
     try {
+      const allCategories = await Recipe.allCategory()
       const recipes = await Recipe.edit(recipeId)
-      const ingredients = await Recipe.ingredients(recipeId)
+      const ingredientsGroup = await Recipe.ingredientsGroup(recipeId)
       const steps = await Recipe.steps(recipeId)
+      let ingredientsGroupsData = []
+      let recipesData = []
+      let categoriesData = []
       let stepsData = []
       function stepsImages(i) {
         let stepsImagesData = []
@@ -119,6 +150,39 @@ module.exports = {
         });
         return result
       }
+      function categoryList() {
+        let category_list = []
+        for (let i = 0; i < allCategories.length; i++) {
+          category_list.push({
+            id: allCategories[i].id,
+            uuid: allCategories[i].uuid,
+            title: allCategories[i].title,
+            color: allCategories[i].color,
+            cover: allCategories[i].cover
+          })
+        }
+        return category_list
+      }
+      function ingredients(i) {
+        let ingredientsData = []
+        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
+        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split(",")
+        console.log(ingredientsGroup[i])
+        for (let z = 0; z < t1.length; z++) {
+          ingredientsData.push({
+            uuid: t1[z],
+            body: t2[z]
+          })
+        }
+        return ingredientsData
+      } 
+      for (let i = 0; i < ingredientsGroup.length; i++) {
+        ingredientsGroupsData.push({
+          uuid: ingredientsGroup[i].uuid_group,
+          body: ingredientsGroup[i].body_group,
+          ingredients: ingredients(i)
+        })
+      }
       for (let i = 0; i < steps.length; i++) {
         stepsData.push({
           uuid: steps[i].uuid,
@@ -126,9 +190,20 @@ module.exports = {
           stepsImages: stepsImages(i)
         })
       }
+      for (let i = 0; i < recipes.length; i++) {
+        let categoryId = recipes[i].category_id
+        const categories = await Recipe.getCategory(categoryId)
+        recipesData.push({
+          uuid: recipes[i].uuid,
+          title: recipes[i].title,
+          imageUrl: recipes[i].imageUrl,
+          category_name: categories[0].title,
+          category_list: categoryList(),
+        })
+      }
       const payload = {
-        recipes,
-        ingredients,
+        recipes: recipesData,
+        ingredientsGroup: ingredientsGroupsData,
         steps: stepsData
       }
       misc.response(response, 200, false, null, payload)
@@ -138,44 +213,54 @@ module.exports = {
     }
   },
   store: async (request, response) => {
-    const filename = request.files.imageurl
+    let filename
     const path = "/public/images/recipe/"
     const title = request.body.title
-    const categoryId = request.body.categoryId
+    const categoryName = request.body.categoryName
+    const duration = request.body.duration
     const userId = request.body.userId
+    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
     const username = await User.auth(userId)
+    const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
     const ingredients = JSON.parse(request.body.ingredients)
     const steps = JSON.parse(request.body.steps)
+
     try {
       let dataRecipe = new (function () {
-        this.id = uuidv4()
+        this.uuid = uuidv4()
         this.title = title
-        this.imageurl = `${username[0].name}-${this.id}-${filename.name}`
-        this.category_id = categoryId
+        this.imageurl = `${filename == "" ? username[0].name-this.id-filename.name : ""}`
+        this.category_id = getCategoryByTitle[0].id
+        this.duration = duration
         this.user_id = userId
       })()
+
+      if(request.files) {
+        filename = request.files.imageurl
+        await filename.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${filename.name}`)
+      } 
+
       // if(request.files.size >= 5120) { // 5 MB
       //   fs.unlink(`public/images/recipe/${username[0].name}-${this.id}-${filename.name}`);
       //   misc.response(response, true, 500, 'Server Error');
       // }
-      await filename.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.id}-${filename.name}`)
+      
       await Recipe.store(dataRecipe)
-      steps.forEach(async (value, index) => {
-        let dataSteps = {
-          id: uuidv4(),
-          body: value.item,
-          recipe_id: dataRecipe.uuid
+      
+      // Store ingredients group & ingredients
+      for(let i = 0; i < ingredientsGroup.length; i++) {
+        for (let z = 0; z < ingredients.length; z++) { 
+          await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
+          await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
         }
-        await Recipe.storeSteps(dataSteps)
-      })
-      ingredients.forEach(async (value, index) => {
-        let dataIngredients = {
-          id: uuidv4(),
-          body: value.item,
-          recipe_id: dataRecipe.uuid
-        }
-        await Recipe.storeIngredients(dataIngredients)
-      })
+      }
+
+      // Store steps
+      for (let i = 0; i < steps.length; i++) {
+        await Recipe.storeSteps(uuidv4(), steps[i].item, dataRecipe.uuid) 
+      }
+        
+     
       misc.response(response, false, 200, null, null)
     } catch (error) {
       console.log(error.message) // in-development
@@ -195,14 +280,29 @@ module.exports = {
   },
   update: async (request, response) => {
     try {
-      const path = "/public/images/steps-images/"
+      const pathStepsImages = "/public/images/steps-images/"
+      const pathRecipe = "/public/images/recipe/"
       const recipeId = request.params.recipeId
+      const userId = request.body.userId
+      const username = await User.auth(userId)
       const title = request.body.title
+      const categoryTitle = request.body.categoryName
       const ingredients = JSON.parse(request.body.ingredients)
       const steps = JSON.parse(request.body.steps)
       const removeIngredients = JSON.parse(request.body.removeIngredients)
       const removeSteps = JSON.parse(request.body.removeSteps)
 
+      // Update Recipe Image
+      if(request.files) {
+        let file = request.files.imagerecipe
+        let filename = `${username[0].name}-${recipeId}-${file.name}`
+        await Recipe.updateImageRecipe(filename, recipeId)
+        file.mv(`${process.cwd()}${pathRecipe}${filename}`)
+      }
+
+      // Update Category
+      const category = await Recipe.getCategoryByTitle(categoryTitle);
+      await Recipe.updateRecipeCategoryId(category[0].uuid, recipeId)
       
       for (let i = 0; i < steps.length; i++) {
         let stepsId = steps[i].uuid
@@ -216,7 +316,7 @@ module.exports = {
               let files = request.files[`imageurl-${i}-${z}`]
               let getFilesName = files.name.split("_")[0]
               let replaceFilesName = getFilesName.replace("image", `steps-images-${i}-${stepsImagesId}.jpg`)
-              files.mv(`${process.cwd()}${path}${replaceFilesName}`)
+              files.mv(`${process.cwd()}${pathStepsImages}${replaceFilesName}`)
               let checkStepsImages = await Recipe.checkStepsImages(stepsImagesId)
               array.push({
                 "stepsImagesId": stepsImagesId,

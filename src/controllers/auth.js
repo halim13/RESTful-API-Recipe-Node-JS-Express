@@ -52,7 +52,6 @@ module.exports = {
   refreshToken: async (request, response) => {
     const { token } = request.body
     const decoded = jwt.decode(token, { complete: true })
-    console.log(decoded)
     const payload = {
       user: {
         uuid: decoded.payload.user.uuid
