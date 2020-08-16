@@ -46,7 +46,7 @@ module.exports = {
     const id = request.params.recipeId
     try {
       const recipes = await Recipe.detail(id)
-      const ingredients = await Recipe.ingredients(id)
+      // const ingredients = await Recipe.ingredients(id)
       const steps = await Recipe.steps(id)
       let stepsData = []
 
@@ -77,7 +77,7 @@ module.exports = {
 
       const payload = {
         recipes,
-        ingredients,
+        // ingredients,
         steps: stepsData
       }
       misc.response(response, 200, false, null, payload)
@@ -167,7 +167,6 @@ module.exports = {
         let ingredientsData = []
         let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
         let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split(",")
-        console.log(ingredientsGroup[i])
         for (let z = 0; z < t1.length; z++) {
           ingredientsData.push({
             uuid: t1[z],
@@ -196,6 +195,7 @@ module.exports = {
         recipesData.push({
           uuid: recipes[i].uuid,
           title: recipes[i].title,
+          duration: recipes[i].duration,
           imageUrl: recipes[i].imageUrl,
           category_name: categories[0].title,
           category_list: categoryList(),
@@ -213,7 +213,6 @@ module.exports = {
     }
   },
   store: async (request, response) => {
-    let filename
     const path = "/public/images/recipe/"
     const title = request.body.title
     const categoryName = request.body.categoryName
@@ -226,20 +225,21 @@ module.exports = {
     const steps = JSON.parse(request.body.steps)
 
     try {
+
+
       let dataRecipe = new (function () {
         this.uuid = uuidv4()
         this.title = title
-        this.imageurl = `${filename == "" ? username[0].name-this.id-filename.name : ""}`
-        this.category_id = getCategoryByTitle[0].id
+        this.imageurl = request.files !==  "" ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
+        this.category_id = getCategoryByTitle[0].uuid
         this.duration = duration
         this.user_id = userId
       })()
 
       if(request.files) {
-        filename = request.files.imageurl
-        await filename.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${filename.name}`)
-      } 
-
+        await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+      }
+     
       // if(request.files.size >= 5120) { // 5 MB
       //   fs.unlink(`public/images/recipe/${username[0].name}-${this.id}-${filename.name}`);
       //   misc.response(response, true, 500, 'Server Error');
@@ -258,8 +258,7 @@ module.exports = {
       // Store steps
       for (let i = 0; i < steps.length; i++) {
         await Recipe.storeSteps(uuidv4(), steps[i].item, dataRecipe.uuid) 
-      }
-        
+      } 
      
       misc.response(response, false, 200, null, null)
     } catch (error) {

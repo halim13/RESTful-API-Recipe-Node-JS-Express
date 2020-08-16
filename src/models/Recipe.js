@@ -183,7 +183,7 @@ module.exports = {
   },
   edit: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageUrl, a.category_id
+      const query = `SELECT a.uuid, a.duration, a.title, a.imageUrl, a.category_id
       FROM recipes a
       WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
