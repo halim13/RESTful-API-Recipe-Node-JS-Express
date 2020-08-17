@@ -36,30 +36,6 @@ module.exports = {
       })
     })
   },
-  updateRecipeCategoryId: (categoryId, recipeId) => {
-    return new Promise((resolve, reject) => {
-      const query = `UPDATE recipes SET category_id = '${categoryId}' WHERE uuid = '${recipeId}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-  updateImageRecipe: (imageRecipe, recipeId) => {
-    return new Promise((resolve, reject) => {
-      const query = `UPDATE recipes SET imageurl = '${imageRecipe}' WHERE uuid = '${recipeId}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
   total: categoryId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT COUNT(*) AS total FROM recipes WHERE category_id = '${categoryId}'`
@@ -221,7 +197,7 @@ module.exports = {
   },
   storeSteps: (uuid, body, recipeId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE body = '${body}'`
+      const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -245,7 +221,7 @@ module.exports = {
   },
   storeIngredients: (uuid, body, recipeId, ingredientGroupId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE body = '${body}'`
+      const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -257,7 +233,7 @@ module.exports = {
   },
   storeIngredientsGroup: (uuid, body) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE body = '${body}'`
+      const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -267,11 +243,11 @@ module.exports = {
       })
     })
   },
-  updateTitleRecipe: (uuid, title) => {
+  update: (data, recipeId) => {
     return new Promise((resolve, reject) => {
-      const query = `UPDATE recipes SET title = '${title}' WHERE uuid = '${uuid}'`
-      connection.query(query, (error, result) => {
-        if (error) {
+      const query = `UPDATE recipes SET ? WHERE uuid = '${recipeId}'`
+      connection.query(query, data, (error, result) => {
+        if(error) {
           reject(new Error(error))
         } else {
           resolve(result)
@@ -366,6 +342,18 @@ module.exports = {
   deleteIngredients: uuid => {
     return new Promise((resolve, reject) => {
       const query = `DELETE FROM ingredients WHERE uuid = '${uuid}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+  deleteIngredientsGroup: uuid => {
+    return new Promise((resolve, reject) => {
+      const query = `DELETE FROM ingredient_groups WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))

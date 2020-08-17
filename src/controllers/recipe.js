@@ -216,9 +216,9 @@ module.exports = {
     const path = "/public/images/recipe/"
     const title = request.body.title
     const categoryName = request.body.categoryName
+    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
     const duration = request.body.duration
     const userId = request.body.userId
-    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
     const username = await User.auth(userId)
     const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
     const ingredients = JSON.parse(request.body.ingredients)
@@ -240,14 +240,11 @@ module.exports = {
         await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
       }
      
-      // if(request.files.size >= 5120) { // 5 MB
-      //   fs.unlink(`public/images/recipe/${username[0].name}-${this.id}-${filename.name}`);
-      //   misc.response(response, true, 500, 'Server Error');
-      // }
       
+      // Create Recipe
       await Recipe.store(dataRecipe)
       
-      // Store ingredients group & ingredients
+      // Create or Update Ingredients Group & Ingredients Child
       for(let i = 0; i < ingredientsGroup.length; i++) {
         for (let z = 0; z < ingredients.length; z++) { 
           await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
@@ -282,86 +279,75 @@ module.exports = {
       const pathStepsImages = "/public/images/steps-images/"
       const pathRecipe = "/public/images/recipe/"
       const recipeId = request.params.recipeId
+      const title = request.body.title
+      const categoryName = request.body.categoryName
+      const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
+      const duration = request.body.duration
       const userId = request.body.userId
       const username = await User.auth(userId)
-      const title = request.body.title
-      const categoryTitle = request.body.categoryName
+      const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
+      const removeIngredientsGroup = JSON.parse(request.body.removeIngredientsGroup)
       const ingredients = JSON.parse(request.body.ingredients)
-      const steps = JSON.parse(request.body.steps)
       const removeIngredients = JSON.parse(request.body.removeIngredients)
+      const steps = JSON.parse(request.body.steps)
       const removeSteps = JSON.parse(request.body.removeSteps)
 
-      // Update Recipe Image
-      if(request.files) {
-        let file = request.files.imagerecipe
-        let filename = `${username[0].name}-${recipeId}-${file.name}`
-        await Recipe.updateImageRecipe(filename, recipeId)
-        file.mv(`${process.cwd()}${pathRecipe}${filename}`)
-      }
+      let dataRecipe = new (function () {
+        this.uuid = recipeId
+        this.title = title
+        // this.imageurl = request.files !==  "" ? `${username[0].name}-${this.recipeId}-${request.files.imageurl.name}` : ""
+        this.category_id = getCategoryByTitle[0].uuid,
+        this.duration = duration
+        this.user_id = userId
+      })
 
-      // Update Category
-      const category = await Recipe.getCategoryByTitle(categoryTitle);
-      await Recipe.updateRecipeCategoryId(category[0].uuid, recipeId)
+      // if(request.files) {
+      //   await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+      // }
+
+      // Update Recipe
+      await Recipe.update(dataRecipe, recipeId)
       
       for (let i = 0; i < steps.length; i++) {
         let stepsId = steps[i].uuid
-        let array = [];
-        let index = [];
-        let stepsImageExists = [];
+      
         for (let z = 0; z < 3; z++) {
           if (request.files) {
             if (typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
-              stepsImagesId = request.body[`stepsImagesId-${i}-${z}`]
+              let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`]
               let files = request.files[`imageurl-${i}-${z}`]
               let getFilesName = files.name.split("_")[0]
               let replaceFilesName = getFilesName.replace("image", `steps-images-${i}-${stepsImagesId}.jpg`)
               files.mv(`${process.cwd()}${pathStepsImages}${replaceFilesName}`)
               let checkStepsImages = await Recipe.checkStepsImages(stepsImagesId)
-              array.push({
-                "stepsImagesId": stepsImagesId,
-                "file": replaceFilesName,
-              })
-              index.push(z)
-              stepsImageExists.push(checkStepsImages.length)
+           
               if (checkStepsImages.length === 1) {
                 await Recipe.updateStepsImages(stepsImagesId, replaceFilesName)
-              } 
-            }   
-          }
-        }
-
-        // Steps Images
-        for (let k = 0; k < 3; k++) {
-          let idx = index.indexOf(k);
-          if(idx > -1) {
-            if(stepsImageExists[0] === 0) {
-              for (let i = 0; i < array.length; i++) {
+              } else {
                 await Recipe.storeStepsImage(
-                  array[i].stepsImagesId,
-                  array[i].file,
+                  uuidv4(),
+                  replaceFilesName,
                   recipeId, 
                   stepsId
                 )      
               }
-            }
-          } else {
-            if(stepsImageExists[0] === 0) {
-              await Recipe.storeStepsImage(
-                uuidv4(),
-                'default-image.png',
-                recipeId, 
-                stepsId
-              )    
-            }
-          }  
+            }   
+          }
         }
-
       }
 
-
-      // Update Title
-      await Recipe.updateTitleRecipe(recipeId, title)
-
+      // Create or Update Ingredients Group & Ingredients Child
+      for(let i = 0; i < ingredientsGroup.length; i++) {
+        for (let z = 0; z < ingredients.length; z++) { 
+          await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
+          await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
+        }
+      }
+      // Delete Ingredients Group
+      for (let i = 0; i < removeIngredientsGroup.length; i++) {
+        let idIngredientsGroup = removeIngredientsGroup[i].uuid
+        await Recipe.deleteIngredientsGroup(idIngredientsGroup)
+      }
       // Create or Update Ingredients
       for (let i = 0; i < ingredients.length; i++) {
         let id = ingredients[i].uuid
