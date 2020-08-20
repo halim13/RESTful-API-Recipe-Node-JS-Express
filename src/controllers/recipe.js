@@ -291,7 +291,7 @@ module.exports = {
       const removeIngredients = JSON.parse(request.body.removeIngredients)
       const steps = JSON.parse(request.body.steps)
       const removeSteps = JSON.parse(request.body.removeSteps)
-
+    
       let dataRecipe = new (function () {
         this.uuid = recipeId
         this.title = title
@@ -307,31 +307,51 @@ module.exports = {
 
       // Update Recipe
       await Recipe.update(dataRecipe, recipeId)
-      
+
       for (let i = 0; i < steps.length; i++) {
         let stepsId = steps[i].uuid
-      
-        for (let z = 0; z < 3; z++) {
-          if (request.files) {
-            if (typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
-              let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`]
-              let files = request.files[`imageurl-${i}-${z}`]
-              let getFilesName = files.name.split("_")[0]
-              let replaceFilesName = getFilesName.replace("image", `steps-images-${i}-${stepsImagesId}.jpg`)
-              files.mv(`${process.cwd()}${pathStepsImages}${replaceFilesName}`)
-              let checkStepsImages = await Recipe.checkStepsImages(stepsImagesId)
-           
-              if (checkStepsImages.length === 1) {
-                await Recipe.updateStepsImages(stepsImagesId, replaceFilesName)
+        let checkStepsImages = await Recipe.checkStepsImages(stepsId)
+        if(checkStepsImages.length === 3) {
+          for (let z = 0; z < 3; z++) {
+            if (request.files) {
+              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                let file = request.files[`imageurl-${i}-${z}`]
+                let getFileName = file.name.split("_")[0]
+                let getFileExt = file.name.split(".").pop()
+                let filename = getFileName.replace("image", `steps-images-${i}-${stepsImagesId}.${getFileExt}`)
+                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                await Recipe.storeStepsImage(
+                  stepsImagesId,
+                  filename,
+                  stepsId
+                )   
+              }
+            }
+          }
+        } else {
+          for (let z = 0; z < 3; z++) {
+            if (request.files) {
+              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                let file = request.files[`imageurl-${i}-${z}`]
+                let getFileName = file.name.split("_")[0]
+                let getFileExt = file.name.split(".").pop()
+                let filename = getFileName.replace("image", `steps-images-${i}-${stepsImagesId}.${getFileExt}`)
+                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                await Recipe.storeStepsImage(
+                  stepsImagesId,
+                  filename,
+                  stepsId
+                )   
               } else {
                 await Recipe.storeStepsImage(
                   uuidv4(),
-                  replaceFilesName,
-                  recipeId, 
+                  'default-thumbnail.jpg',
                   stepsId
-                )      
+                )   
               }
-            }   
+            } 
           }
         }
       }
@@ -350,9 +370,9 @@ module.exports = {
       }
       // Create or Update Ingredients
       for (let i = 0; i < ingredients.length; i++) {
-        let id = ingredients[i].uuid
+        let uuid = ingredients[i].uuid
         let body = ingredients[i].item
-        await Recipe.storeIngredients(id, body, recipeId)
+        await Recipe.storeIngredients(uuid, body, recipeId)
       }
       // Delete Ingredients
       for (let i = 0; i < removeIngredients.length; i++) {
@@ -361,9 +381,9 @@ module.exports = {
       }
       // Create or Update Steps
       for (let i = 0; i < steps.length; i++) {
-        let id = steps[i].uuid
+        let uuid = steps[i].uuid
         let body = steps[i].item
-        await Recipe.storeSteps(id, body, recipeId)
+        await Recipe.storeSteps(uuid, body, recipeId)
       }
       // Delete Steps
       for (let i = 0; i < removeSteps.length; i++) {

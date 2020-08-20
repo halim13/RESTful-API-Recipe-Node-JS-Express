@@ -197,7 +197,7 @@ module.exports = {
   },
   storeSteps: (uuid, body, recipeId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
+      const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE body = '${body}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -207,9 +207,9 @@ module.exports = {
       })
     })
   },
-  storeStepsImage: (uuid, image, recipeId, stepsId) => {
+  storeStepsImage: (uuid, image, stepsId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO stepsimages (uuid, image, recipe_id, step_id) VALUES ('${uuid}', '${image}', '${recipeId}', '${stepsId}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
+      const query = `INSERT INTO stepsimages (uuid, image, step_id) VALUES ('${uuid}', '${image}', '${stepsId}') ON DUPLICATE KEY UPDATE image = '${image}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -221,7 +221,7 @@ module.exports = {
   },
   storeIngredients: (uuid, body, recipeId, ingredientGroupId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
+      const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE body = '${body}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -233,7 +233,7 @@ module.exports = {
   },
   storeIngredientsGroup: (uuid, body) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE uuid = '${uuid}'`
+      const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE body = '${body}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -315,21 +315,9 @@ module.exports = {
       })
     })
   },
-  checkStepsImages: uuid => {
+  checkStepsImages: stepId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM stepsimages a WHERE a.uuid = '${uuid}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-  checkStepsIdOnStepsImages: stepsId => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM stepsimages WHERE step_id = '${stepsId}'`
+      const query = `SELECT * FROM stepsimages a WHERE a.step_id = '${stepId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
