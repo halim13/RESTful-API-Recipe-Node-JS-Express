@@ -43,11 +43,12 @@ module.exports = {
     }
   },
   detail: async (request, response) => {
-    const id = request.params.recipeId
+    const recipeId = request.params.recipeId
     try {
-      const recipes = await Recipe.detail(id)
-      // const ingredients = await Recipe.ingredients(id)
-      const steps = await Recipe.steps(id)
+      const recipes = await Recipe.detail(recipeId)
+      const ingredientsGroup = await Recipe.ingredientsGroup(recipeId)
+      const steps = await Recipe.steps(recipeId)
+      let ingredientsGroupsData = []
       let stepsData = []
 
 
@@ -67,6 +68,27 @@ module.exports = {
         return result
       }
 
+      function ingredients(i) {
+        let ingredientsData = []
+        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
+        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split(",")
+        for (let z = 0; z < t1.length; z++) {
+          ingredientsData.push({
+            uuid: t1[z],
+            body: t2[z]
+          })
+        }
+        return ingredientsData
+      } 
+
+      for (let i = 0; i < ingredientsGroup.length; i++) {
+        ingredientsGroupsData.push({
+          uuid: ingredientsGroup[i].uuid_group,
+          body: ingredientsGroup[i].body_group,
+          ingredients: ingredients(i)
+        })
+      }
+
       for (let i = 0; i < steps.length; i++) {
         stepsData.push({
           uuid: steps[i].uuid,
@@ -77,7 +99,7 @@ module.exports = {
 
       const payload = {
         recipes,
-        // ingredients,
+        ingredientsGroup: ingredientsGroupsData,
         steps: stepsData
       }
       misc.response(response, 200, false, null, payload)
