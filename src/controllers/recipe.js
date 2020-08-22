@@ -159,18 +159,22 @@ module.exports = {
       let stepsData = []
       function stepsImages(i) {
         let stepsImagesData = []
-        let t1 = steps[i].steps_images_id == null ? (stepsImagesData = []) : steps[i].steps_images_id.split(",")
+        let id = steps[i].id
+        let t0 = steps[i].steps_images_id == null ? (stepsImagesData = []) : steps[i].steps_images_id.split(",")
+        let t1 = steps[i].steps_images_uuid == null ? (stepsImagesData = []) : steps[i].steps_images_uuid.split(",")
         let t2 = steps[i].steps_images_body == null ? (stepsImagesData = []) : steps[i].steps_images_body.split(",")
-        for (let z = 0; z < t1.length; z++) {
+        for (let z = 0; z < t0.length; z++) {
           stepsImagesData.push({
+            id: parseInt(t0[z]),
             uuid: t1[z],
             body: t2[z]
           })
         }
-        let result = stepsImagesData.sort(function(a, b) {
-          return parseInt(a.id) - parseInt(b.id);
-        });
-        return result
+        // let result = stepsImagesData.sort(function(a, b) {
+        //   return parseInt(a.id) - parseInt(b.id);
+        // });
+        // return result
+        return stepsImagesData
       }
       function categoryList() {
         let category_list = []

@@ -63,11 +63,12 @@ module.exports = {
   steps: recipeId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT DISTINCT a.uuid, a.body, 
-      GROUP_CONCAT(b.uuid SEPARATOR ',') steps_images_id, 
+      GROUP_CONCAT(b.id SEPARATOR ',') steps_images_id,
+      GROUP_CONCAT(b.uuid SEPARATOR ',') steps_images_uuid, 
       GROUP_CONCAT(b.image SEPARATOR ',') steps_images_body
       FROM steps a LEFT JOIN stepsimages b ON a.uuid = b.step_id 
       WHERE a.recipe_id = '${recipeId}'
-      GROUP BY a.id`
+      GROUP BY a.id ORDER BY b.id ASC`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
