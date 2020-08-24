@@ -225,6 +225,7 @@ module.exports = {
           title: recipes[i].title,
           duration: recipes[i].duration,
           imageUrl: recipes[i].imageUrl,
+          portion: recipes[i].portion,
           category_name: categories[0].title,
           category_list: categoryList(),
         })
@@ -243,9 +244,10 @@ module.exports = {
   store: async (request, response) => {
     const path = "/public/images/recipe/"
     const title = request.body.title
+    const duration = request.body.duration
+    const portion = request.body.portion
     const categoryName = request.body.categoryName
     const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
-    const duration = request.body.duration
     const userId = request.body.userId
     const username = await User.auth(userId)
     const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
@@ -258,14 +260,15 @@ module.exports = {
       let dataRecipe = new (function () {
         this.uuid = uuidv4()
         this.title = title
-        this.imageurl = request.files !==  "" ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
         this.category_id = getCategoryByTitle[0].uuid
+        // this.imageurl = request.files !==  "" ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
+        this.portion = portion
         this.duration = duration
         this.user_id = userId
       })()
 
       if(request.files) {
-        await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+        // await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
       }
      
       
@@ -308,9 +311,10 @@ module.exports = {
       const pathRecipe = "/public/images/recipe/"
       const recipeId = request.params.recipeId
       const title = request.body.title
-      const categoryName = request.body.categoryName
-      const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
       const duration = request.body.duration
+      const categoryName = request.body.categoryName
+      const portion = request.body.portion
+      const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
       const userId = request.body.userId
       const username = await User.auth(userId)
       const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
@@ -324,8 +328,9 @@ module.exports = {
         this.uuid = recipeId
         this.title = title
         // this.imageurl = request.files !==  "" ? `${username[0].name}-${this.recipeId}-${request.files.imageurl.name}` : ""
-        this.category_id = getCategoryByTitle[0].uuid,
+        this.portion = portion
         this.duration = duration
+        this.category_id = getCategoryByTitle[0].uuid
         this.user_id = userId
       })
 

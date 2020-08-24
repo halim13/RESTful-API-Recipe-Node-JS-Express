@@ -114,7 +114,7 @@ module.exports = {
   },
   detail: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageUrl, a.isfavourite FROM recipes a WHERE uuid = '${uuid}'`
+      const query = `SELECT a.uuid, a.title, a.imageUrl, a.portion, a.isfavourite FROM recipes a WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -126,10 +126,8 @@ module.exports = {
   },
   favourite: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.duration, a.isfavourite, b.type as affordability , c.type as complexity
+      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.duration, a.isfavourite
       FROM recipes a
-      LEFT JOIN affordabilities b ON b.id = a.affordability
-      LEFT JOIN complexities c ON c.id = a.complexity
       WHERE isfavourite = 1`
       connection.query(query, (error, result) => {
         if (error) {
@@ -142,10 +140,9 @@ module.exports = {
   },
   show: (offset, limit, search, categoryId) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT DISTINCT a.uuid, a.title, a.duration, a.imageurl, b.type as affordabilities, c.type as complexities, d.title as category_title
+      const query = `SELECT DISTINCT a.uuid, a.title, a.duration, a.portion, a.imageurl, c.name, d.title as category_title
       FROM recipes a
-      LEFT JOIN affordabilities b ON a.affordability = b.uuid
-      LEFT JOIN complexities c ON a.complexity = c.uuid
+      INNER JOIN users c ON a.user_id = c.uuid
       LEFT JOIN categories d ON a.category_id = d.uuid
       WHERE a.category_id = '${categoryId}' AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
@@ -160,7 +157,7 @@ module.exports = {
   },
   edit: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.duration, a.title, a.imageUrl, a.category_id
+      const query = `SELECT a.uuid, a.duration, a.title, a.portion, a.imageUrl, a.category_id
       FROM recipes a
       WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
