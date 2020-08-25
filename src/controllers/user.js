@@ -18,18 +18,14 @@ module.exports = {
     const path = "/public/images/avatar/"
     const userId = request.params.userId
     const userDb = await User.getProfile(userId)
-    let error = false
     let filename
     let extension
     let size
-    if (request.files) {
-      filename = `${userDb[0].id}-${request.files.avatar.name}`
-    }
+  
     try {
       if (request.files) {
         if (request.files.avatar.size >= 5242880) {
           // 5MB
-          error = true
           fs.unlink(`public/images/avatar/${filename}`)
           throw new Error("Oops! size cannot more than 5MB.")
         }
@@ -44,29 +40,22 @@ module.exports = {
         //   throw new Error('Oops! file allowed only JPG, JPEG, PNG, GIF, SVG.');
         // }
       }
-      //   function isImage(extension) {
-      //     switch (extension) {
-      //       case 'image/png':
-      //       case 'image/jpeg':
-      //       case 'image/gif':
-      //       case 'image/bmp':
-      //       case 'image/svg+xml':
-      //         return true;
-      //     }
-      //   return false;
-      // }
+
+      if (request.files) {
+        let getFileName = request.files.avatar.name.split("_")[0]
+        let getFileExt = request.files.avatar.name.split(".").pop()
+        filename = getFileName.replace("image", `${userDb[0].id}-${userDb[0].name}-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+        await request.files.avatar.mv(`${process.cwd()}${path}${filename}`)
+      }
+     
       let data = {
         name: request.body ? request.body.username : userDb[0].name,
         bio: request.body ? request.body.bio : userDb[0].bio,
         avatar: request.files ? filename : userDb[0].avatar
       }
-      if (error === false) {
-        if (request.files) {
-          await request.files.avatar.mv(`${process.cwd()}${path}${userDb[0].id}-${request.files.avatar.name}`)
-        }
-        await User.updateProfile(data, userId)
-        misc.response(response, 200, false, null, data)
-      }
+   
+      await User.updateProfile(data, userId)
+      misc.response(response, 200, false, null, data)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error.")

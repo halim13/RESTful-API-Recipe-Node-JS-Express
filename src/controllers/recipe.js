@@ -243,6 +243,7 @@ module.exports = {
   },
   store: async (request, response) => {
     let filename = ""
+    const pathStepsImages = "/public/images/steps-images/"
     const path = "/public/images/recipe/"
     const title = request.body.title
     const duration = request.body.duration
@@ -257,35 +258,85 @@ module.exports = {
 
     try {
 
+      if(request.files) {
+        let getFileName = request.files.imageurl.name.split("_")[0]
+        let getFileExt = request.files.imageurl.name.split(".").pop()
+        filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+      }
+
       let dataRecipe = new (function () {
         this.uuid = uuidv4()
         this.title = title
         this.category_id = getCategoryByTitle[0].uuid
-        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
+        this.imageurl = filename
         this.portion = portion
         this.duration = duration
         this.user_id = userId
       })()
 
       if(request.files) {
-        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+        request.files.imageurl.mv(`${process.cwd()}${path}${filename}`)
+      }
+
+      // Store Recipe
+      await Recipe.store(dataRecipe)
+
+      for (let i = 0; i < steps.length; i++) {
+        let stepsId = steps[i].uuid
+        let checkStepsImages = await Recipe.checkStepsImages(stepsId)
+        await Recipe.storeSteps(stepsId, steps[i].item, dataRecipe.uuid) 
+        if(checkStepsImages.length === 3) {
+          for (let z = 0; z < 3; z++) {
+            if (request.files) {
+              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                let file = request.files[`imageurl-${i}-${z}`]
+                let getFileName = file.name.split("_")[0]
+                let getFileExt = file.name.split(".").pop()
+                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                await Recipe.storeStepsImage(
+                  stepsImagesId,
+                  filename,
+                  stepsId
+                )   
+              }
+            }
+          }
+        } else {
+          for (let z = 0; z < 3; z++) {
+            if (request.files) {
+              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                let file = request.files[`imageurl-${i}-${z}`]
+                let getFileName = file.name.split("_")[0]
+                let getFileExt = file.name.split(".").pop()
+                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                await Recipe.storeStepsImage(
+                  stepsImagesId,
+                  filename,
+                  stepsId
+                )   
+              } else {
+                await Recipe.storeStepsImage(
+                  uuidv4(),
+                  'default-thumbnail.jpg',
+                  stepsId
+                )   
+              }
+            } 
+          }
+        }    
       }
            
-      // Create Recipe
-      await Recipe.store(dataRecipe)
-      
-      // Create or Update Ingredients Group & Ingredients Child
+      // Store or Update Ingredients Group & Ingredients Child
       for(let i = 0; i < ingredientsGroup.length; i++) {
         for (let z = 0; z < ingredients.length; z++) { 
           await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
           await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
         }
       }
-
-      // Store steps
-      for (let i = 0; i < steps.length; i++) {
-        await Recipe.storeSteps(uuidv4(), steps[i].item, dataRecipe.uuid) 
-      } 
      
       misc.response(response, false, 200, null, null)
     } catch (error) {
@@ -326,7 +377,7 @@ module.exports = {
       let dataRecipe = new (function () {
         this.uuid = recipeId
         this.title = title
-        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
+        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${new Date().getUTCMilliseconds()}-${request.files.imageurl.name}` : ""
         this.portion = portion
         this.duration = duration
         this.category_id = getCategoryByTitle[0].uuid
@@ -334,7 +385,7 @@ module.exports = {
       })
 
       if(request.files) {
-        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${new Date().getUTCMilliseconds()}-${request.files.imageurl.name}`)
       }
 
       // Update Recipe
@@ -351,7 +402,7 @@ module.exports = {
                 let file = request.files[`imageurl-${i}-${z}`]
                 let getFileName = file.name.split("_")[0]
                 let getFileExt = file.name.split(".").pop()
-                let filename = getFileName.replace("image", `steps-images-${i}-${stepsImagesId}.${getFileExt}`)
+                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
                 file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
                 await Recipe.storeStepsImage(
                   stepsImagesId,
@@ -369,7 +420,7 @@ module.exports = {
                 let file = request.files[`imageurl-${i}-${z}`]
                 let getFileName = file.name.split("_")[0]
                 let getFileExt = file.name.split(".").pop()
-                let filename = getFileName.replace("image", `steps-images-${i}-${stepsImagesId}.${getFileExt}`)
+                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
                 file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
                 await Recipe.storeStepsImage(
                   stepsImagesId,
