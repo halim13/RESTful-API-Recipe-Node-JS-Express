@@ -242,6 +242,7 @@ module.exports = {
     }
   },
   store: async (request, response) => {
+    let filename = ""
     const path = "/public/images/recipe/"
     const title = request.body.title
     const duration = request.body.duration
@@ -256,22 +257,20 @@ module.exports = {
 
     try {
 
-
       let dataRecipe = new (function () {
         this.uuid = uuidv4()
         this.title = title
         this.category_id = getCategoryByTitle[0].uuid
-        // this.imageurl = request.files !==  "" ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
+        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
         this.portion = portion
         this.duration = duration
         this.user_id = userId
       })()
 
       if(request.files) {
-        // await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
       }
-     
-      
+           
       // Create Recipe
       await Recipe.store(dataRecipe)
       
@@ -327,16 +326,16 @@ module.exports = {
       let dataRecipe = new (function () {
         this.uuid = recipeId
         this.title = title
-        // this.imageurl = request.files !==  "" ? `${username[0].name}-${this.recipeId}-${request.files.imageurl.name}` : ""
+        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${request.files.imageurl.name}` : ""
         this.portion = portion
         this.duration = duration
         this.category_id = getCategoryByTitle[0].uuid
         this.user_id = userId
       })
 
-      // if(request.files) {
-      //   await request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
-      // }
+      if(request.files) {
+        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${request.files.imageurl.name}`)
+      }
 
       // Update Recipe
       await Recipe.update(dataRecipe, recipeId)
