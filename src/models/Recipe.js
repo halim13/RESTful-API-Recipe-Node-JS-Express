@@ -126,8 +126,9 @@ module.exports = {
   },
   favourite: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.duration, a.isfavourite
+      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavourite, b.name
       FROM recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
       WHERE isfavourite = 1`
       connection.query(query, (error, result) => {
         if (error) {

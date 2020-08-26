@@ -244,7 +244,7 @@ module.exports = {
   store: async (request, response) => {
     let filename = ""
     const pathStepsImages = "/public/images/steps-images/"
-    const path = "/public/images/recipe/"
+    const pathRecipe = "/public/images/recipe/"
     const title = request.body.title
     const duration = request.body.duration
     const portion = request.body.portion
@@ -259,24 +259,27 @@ module.exports = {
     try {
 
       if(request.files) {
-        let getFileName = request.files.imageurl.name.split("_")[0]
-        let getFileExt = request.files.imageurl.name.split(".").pop()
-        filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+        if(typeof request.files.imageurl !== "undefined") {
+          let getFileName = request.files.imageurl.name.split("_")[0]
+          let getFileExt = request.files.imageurl.name.split(".").pop()
+          filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+          request.files.imageurl.mv(`${process.cwd()}${pathRecipe}${filename}`)
+        }
       }
 
       let dataRecipe = new (function () {
         this.uuid = uuidv4()
         this.title = title
         this.category_id = getCategoryByTitle[0].uuid
-        this.imageurl = filename
+        if(request.files) {
+          if(typeof request.files.imageurl !== "undefined") {
+            this.imageurl = filename
+          }
+        }
         this.portion = portion
         this.duration = duration
         this.user_id = userId
       })()
-
-      if(request.files) {
-        request.files.imageurl.mv(`${process.cwd()}${path}${filename}`)
-      }
 
       // Store Recipe
       await Recipe.store(dataRecipe)
@@ -356,7 +359,7 @@ module.exports = {
     }
   },
   update: async (request, response) => {
-    try {
+      let filename = ""
       const pathStepsImages = "/public/images/steps-images/"
       const pathRecipe = "/public/images/recipe/"
       const recipeId = request.params.recipeId
@@ -373,21 +376,32 @@ module.exports = {
       const removeIngredients = JSON.parse(request.body.removeIngredients)
       const steps = JSON.parse(request.body.steps)
       const removeSteps = JSON.parse(request.body.removeSteps)
+    try {
+
+      if(request.files) {
+        if(typeof request.files.imageurl !== "undefined") { 
+          let getFileName = request.files.imageurl.name.split("_")[0]
+          let getFileExt = request.files.imageurl.name.split(".").pop()
+          filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+          request.files.imageurl.mv(`${process.cwd()}${pathRecipe}${filename}`)
+        }
+      }
     
       let dataRecipe = new (function () {
         this.uuid = recipeId
         this.title = title
-        this.imageurl = request.files ? `${username[0].name}-${this.uuid}-${new Date().getUTCMilliseconds()}-${request.files.imageurl.name}` : ""
+        if(request.files) {
+          if(typeof request.files.imageurl !== "undefined") {
+            this.imageurl = filename
+          }
+        }
         this.portion = portion
         this.duration = duration
         this.category_id = getCategoryByTitle[0].uuid
         this.user_id = userId
       })
 
-      if(request.files) {
-        request.files.imageurl.mv(`${process.cwd()}${path}${username[0].name}-${dataRecipe.uuid}-${new Date().getUTCMilliseconds()}-${request.files.imageurl.name}`)
-      }
-
+      
       // Update Recipe
       await Recipe.update(dataRecipe, recipeId)
 

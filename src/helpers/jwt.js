@@ -12,7 +12,7 @@ module.exports = function(request, response, next) {
         misc.response(response, 401, true, 'Token is not valid.');
       }
       else {
-        // request.user = decoded.user; // If you want specify getting request
+        // request.user = decoded.user; // If you want specify getting request property
         request.decoded = decoded;
         next();
       }
