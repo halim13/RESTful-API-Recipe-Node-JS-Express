@@ -1,6 +1,8 @@
 const connection = require("../configs/db")
+
 module.exports = {
-  allCategory: () => {
+
+  getCategories: () => {
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM categories`
       connection.query(query, (error, result) => {
@@ -12,6 +14,7 @@ module.exports = {
       })
     })
   },
+
   getCategory: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM categories a WHERE a.uuid = '${uuid}'`
@@ -24,6 +27,7 @@ module.exports = {
       })
     })
   },
+
   getCategoryByTitle: title => {
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM categories a WHERE a.title = '${title}'`
@@ -36,6 +40,7 @@ module.exports = {
       })
     })
   },
+
   total: categoryId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT COUNT(*) AS total FROM recipes WHERE category_id = '${categoryId}'`
@@ -48,7 +53,8 @@ module.exports = {
       })
     })
   },
-  all: () => {
+  
+  getRecipes: () => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.* FROM recipes a`
       connection.query(query, (error, result) => {
@@ -60,6 +66,7 @@ module.exports = {
       })
     })
   },
+
   steps: recipeId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT DISTINCT a.uuid, a.body, 
@@ -78,6 +85,7 @@ module.exports = {
       })
     })
   },
+
   searchSuggestions: () => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.uuid, a.title, a.imageurl
@@ -94,6 +102,7 @@ module.exports = {
       })
     })
   },
+
   ingredientsGroup: recipeId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT DISTINCT a.body body_group, a.uuid uuid_group, 
@@ -112,9 +121,10 @@ module.exports = {
       })
     })
   },
+
   detail: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageUrl, a.portion, a.isfavourite FROM recipes a WHERE uuid = '${uuid}'`
+      const query = `SELECT a.uuid, a.title, a.imageUrl, a.portion, a.isfavorite FROM recipes a WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -124,12 +134,13 @@ module.exports = {
       })
     })
   },
-  favourite: () => {
+
+  favorite: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavourite, b.name
+      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavorite, b.name
       FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
-      WHERE isfavourite = 1`
+      WHERE isfavorite = 1`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error())
@@ -139,9 +150,10 @@ module.exports = {
       })
     })
   },
+
   show: (offset, limit, search, categoryId) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT DISTINCT a.uuid, a.title, a.duration, a.portion, a.imageurl, c.name, d.title as category_title
+      const query = `SELECT DISTINCT a.uuid, a.title, a.duration, a.portion, a.imageurl, a.user_id, c.name, d.title as category_title
       FROM recipes a
       INNER JOIN users c ON a.user_id = c.uuid
       LEFT JOIN categories d ON a.category_id = d.uuid
@@ -156,6 +168,7 @@ module.exports = {
       })
     })
   },
+
   edit: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.uuid, a.duration, a.title, a.portion, a.imageUrl, a.category_id
@@ -170,6 +183,7 @@ module.exports = {
       })
     })
   },
+
   store: data => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO recipes SET ?`
@@ -182,6 +196,7 @@ module.exports = {
       })
     })
   },
+
   storeSearchSuggestions: (uuid, mealId) => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO search_suggestions (uuid, views, meal_id) VALUES('${uuid}', 1, '${mealId}')`
@@ -194,6 +209,7 @@ module.exports = {
       })
     })
   },
+
   storeSteps: (uuid, body, recipeId) => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE body = '${body}'`
@@ -206,6 +222,7 @@ module.exports = {
       })
     })
   },
+
   storeStepsImage: (uuid, image, stepsId) => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO stepsimages (uuid, image, step_id) VALUES ('${uuid}', '${image}', '${stepsId}') ON DUPLICATE KEY UPDATE image = '${image}'`
@@ -218,6 +235,7 @@ module.exports = {
       })
     })
   },
+
   storeIngredients: (uuid, body, recipeId, ingredientGroupId) => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE body = '${body}'`
@@ -230,6 +248,7 @@ module.exports = {
       })
     })
   },
+
   storeIngredientsGroup: (uuid, body) => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE body = '${body}'`
@@ -242,6 +261,7 @@ module.exports = {
       })
     })
   },
+
   update: (data, recipeId) => {
     return new Promise((resolve, reject) => {
       const query = `UPDATE recipes SET ? WHERE uuid = '${recipeId}'`
@@ -254,6 +274,7 @@ module.exports = {
       })
     })
   },
+
   updateStepsImages: (uuid, image) => {
     return new Promise((resolve, reject) => {
       const query = `UPDATE stepsimages a SET a.image = '${image}' WHERE a.uuid = '${uuid}'`
@@ -266,9 +287,10 @@ module.exports = {
       })
     })
   },
-  updateFavourite: (uuid, isFavourite) => {
+
+  updateFavorite: (uuid, isFavorite) => {
     return new Promise((resolve, reject) => {
-      const query = `UPDATE recipes SET isfavourite = '${isFavourite}' WHERE uuid = '${uuid}'`
+      const query = `UPDATE recipes SET isfavorite = '${isFavorite}' WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -278,6 +300,7 @@ module.exports = {
       })
     })
   },
+
   updateSearchSuggestions: (views, recipeId) => {
     return new Promise((resolve, reject) => {
       const query = `UPDATE search_suggestions SET views = ${views} + 1 WHERE recipe_id = '${recipeId}'`
@@ -290,6 +313,7 @@ module.exports = {
       })
     })
   },
+
   getCountViews: recipeId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.views FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
@@ -302,6 +326,7 @@ module.exports = {
       })
     })
   },
+
   checkReservedSearchSuggestions: recipeId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.meal_id FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
@@ -314,6 +339,7 @@ module.exports = {
       })
     })
   },
+
   checkStepsImages: stepId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT * FROM stepsimages a WHERE a.step_id = '${stepId}'`
@@ -326,6 +352,7 @@ module.exports = {
       })
     })
   },
+
   deleteIngredients: uuid => {
     return new Promise((resolve, reject) => {
       const query = `DELETE FROM ingredients WHERE uuid = '${uuid}'`
@@ -338,6 +365,7 @@ module.exports = {
       })
     })
   },
+
   deleteIngredientsGroup: uuid => {
     return new Promise((resolve, reject) => {
       const query = `DELETE FROM ingredient_groups WHERE uuid = '${uuid}'`
@@ -350,6 +378,7 @@ module.exports = {
       })
     })
   },
+
   deleteSteps: uuid => {
     return new Promise((resolve, reject) => {
       const query = `DELETE FROM steps WHERE uuid = '${uuid}'`
@@ -362,4 +391,5 @@ module.exports = {
       })
     })
   }
+
 }

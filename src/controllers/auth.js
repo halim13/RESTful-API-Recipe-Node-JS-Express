@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require("uuid")
 const bcrypt = require("bcryptjs")
 const misc = require("../helpers/response")
 const jwt = require("jsonwebtoken")
+
 class UserNotExists extends Error {
   constructor(message) {
     super(message)
@@ -28,10 +29,12 @@ class InvalidCredentials extends Error {
     this.name = "InvalidCredentials"
   }
 }
+
 module.exports = {
+
   auth: async (request, response) => {
     const uuid = request.decoded.user.uuid
-    const exp = request.decoded.exp // expired token
+    const exp = request.decoded.exp // Expired token
     try {
       const userLoggedIn = await User.auth(uuid)
       let data = {
@@ -49,6 +52,7 @@ module.exports = {
       misc.response(response, 500, true, "Server Error")
     }
   },
+
   refreshToken: async (request, response) => {
     const { token } = request.body
     const decoded = jwt.decode(token, { complete: true })
@@ -60,10 +64,11 @@ module.exports = {
     const refreshToken = await jwt.sign(
       payload,
       process.env.SECRET_KEY,
-      { expiresIn: process.env.REFRESH_TOKEN_LIFE } // 1 week
+      { expiresIn: process.env.REFRESH_TOKEN_LIFE } // 1 Week
     )
     misc.response(response, 200, false, null, refreshToken)
   },
+
   login: async (request, response) => {
     const { email, password } = request.body
     try {
@@ -83,7 +88,7 @@ module.exports = {
       const token = await jwt.sign(
         payload,
         process.env.SECRET_KEY,
-        { expiresIn: process.env.TOKEN_LIFE } // 1 hour
+        { expiresIn: process.env.TOKEN_LIFE } // 1 Hour
       )
       misc.response(response, 200, false, null, token)
     } catch (error) {
@@ -91,6 +96,7 @@ module.exports = {
       misc.response(response, 500, true, error.message)
     }
   },
+
   register: async (request, response) => {
     const { name, email, password } = request.body
     const uuid = uuidv4()
@@ -125,7 +131,7 @@ module.exports = {
       const token = jwt.sign(
         payload,
         process.env.SECRET_KEY,
-        { expiresIn: "1h" } // 1 hour
+        { expiresIn: "1h" } // 1 Hour
       )
       misc.response(response, 200, false, null, token)
     } catch (error) {
@@ -133,4 +139,5 @@ module.exports = {
       misc.response(response, 500, true, error.message)
     }
   }
+
 }

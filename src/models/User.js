@@ -60,7 +60,19 @@ module.exports = {
       })
     })
   },
-  getProfile: uuid => {
+  getCurrentProfile: uuid => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+  viewProfile: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {

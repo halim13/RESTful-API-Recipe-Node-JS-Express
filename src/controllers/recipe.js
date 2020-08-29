@@ -3,16 +3,19 @@ const fs = require("fs-extra")
 const { v4: uuidv4 } = require("uuid")
 const Recipe = require("../models/Recipe")
 const User = require("../models/User")
+
 module.exports = {
-  all: async (request, response) => {
+  
+  getRecipes: async (request, response) => {
     try {
-      const payload = await Recipe.all()
+      const payload = await Recipe.getRecipes()
       misc.response(response, 200, false, null, payload)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error.")
     }
   },
+
   show: async (request, response) => {
     const categoryId = request.params.recipeId
     const page = parseInt(request.query.page) || 1
@@ -21,8 +24,8 @@ module.exports = {
     const offset = (page - 1) * limit
     try {
       const category = await Recipe.getCategory(categoryId)
-      const total = await Recipe.total(category[0].id)
-      const resultTotal = limit > 5 ? Math.ceil(total[0].total / limit) : total[0].total
+      const categoryTotal = await Recipe.total(category[0].id)
+      const resultTotal = limit > 5 ? Math.ceil(categoryTotal[0].total / limit) : categoryTotal[0].total
       const lastPage = Math.ceil(resultTotal / limit)
       const prevPage = page === 1 ? 1 : page - 1
       const nextPage = page === lastPage ? 1 : page + 1
@@ -39,9 +42,10 @@ module.exports = {
       misc.responsePagination(response, 200, false, null, pageDetail, payload)
     } catch (error) {
       console.log(error.message) // in-development
-      misc.response(response, 500, true, "Server Error.")
+      misc.response(response, 500, true, "Server Error")
     }
   },
+
   detail: async (request, response) => {
     const recipeId = request.params.recipeId
     try {
@@ -108,9 +112,10 @@ module.exports = {
       misc.response(response, 200, false, null, payload)
     } catch (error) {
       console.log(error.message) // in-development
-      misc.response(response, 500, true, "Server Error.")
+      misc.response(response, 500, true, "Server Error")
     }
   },
+
   popularViews: async (request, response) => {
     let payload
     const id = request.params.id
@@ -128,18 +133,20 @@ module.exports = {
       misc.response(response, 200, false, null, payload)
     } catch (error) {
       console.log(error.message) // in-development
-      misc.response(response, 500, true, "Server Error.")
+      misc.response(response, 500, true, "Server Error")
     }
   },
-  favourite: async (request, response) => {
+
+  favorite: async (request, response) => {
     try {
-      const payload = await Recipe.favourite()
+      const payload = await Recipe.favorite()
       misc.response(response, 200, false, null, payload)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
     }
   },
+  
   searchSuggestions: async (request, response) => {
     try {
       const payload = await Recipe.searchSuggestions()
@@ -149,10 +156,11 @@ module.exports = {
       misc.response(response, 500, true, "Server Error")
     }
   },
+
   edit: async (request, response) => {
     const recipeId = request.params.recipeId
     try {
-      const allCategories = await Recipe.allCategory()
+      const allCategories = await Recipe.getCategories()
       const recipes = await Recipe.edit(recipeId)
       const ingredientsGroup = await Recipe.ingredientsGroup(recipeId)
       const steps = await Recipe.steps(recipeId)
@@ -241,6 +249,7 @@ module.exports = {
       misc.response(response, 500, true, "Server Error")
     }
   },
+
   store: async (request, response) => {
     let filename = ""
     const pathStepsImages = "/public/images/steps-images/"
@@ -257,7 +266,6 @@ module.exports = {
     const steps = JSON.parse(request.body.steps)
 
     try {
-
       if(request.files) {
         if(typeof request.files.imageurl !== "undefined") {
           let getFileName = request.files.imageurl.name.split("_")[0]
@@ -347,37 +355,38 @@ module.exports = {
       misc.response(response, true, 500, "Server Error")
     }
   },
-  updateFavourite: async (request, response) => {
+
+  updateFavorite: async (request, response) => {
     const id = request.params.recipeId
-    const isFavourite = request.body.isFavourite
+    const isFavorite = request.body.isFavorite
     try {
-      const payload = await Recipe.updateFavourite(id, isFavourite)
+      const payload = await Recipe.updateFavorite(id, isFavorite)
       misc.response(response, 200, false, null, payload)
     } catch (error) {
       console.log(error.message) // in-development
-      misc.response(response, 500, true, "Server Error.")
+      misc.response(response, 500, true, "Server Error")
     }
   },
-  update: async (request, response) => {
-      let filename = ""
-      const pathStepsImages = "/public/images/steps-images/"
-      const pathRecipe = "/public/images/recipe/"
-      const recipeId = request.params.recipeId
-      const title = request.body.title
-      const duration = request.body.duration
-      const categoryName = request.body.categoryName
-      const portion = request.body.portion
-      const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
-      const userId = request.body.userId
-      const username = await User.auth(userId)
-      const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
-      const removeIngredientsGroup = JSON.parse(request.body.removeIngredientsGroup)
-      const ingredients = JSON.parse(request.body.ingredients)
-      const removeIngredients = JSON.parse(request.body.removeIngredients)
-      const steps = JSON.parse(request.body.steps)
-      const removeSteps = JSON.parse(request.body.removeSteps)
-    try {
 
+  update: async (request, response) => {
+    let filename = ""
+    const pathStepsImages = "/public/images/steps-images/"
+    const pathRecipe = "/public/images/recipe/"
+    const recipeId = request.params.recipeId
+    const title = request.body.title
+    const duration = request.body.duration
+    const categoryName = request.body.categoryName
+    const portion = request.body.portion
+    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
+    const userId = request.body.userId
+    const username = await User.auth(userId)
+    const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
+    const removeIngredientsGroup = JSON.parse(request.body.removeIngredientsGroup)
+    const ingredients = JSON.parse(request.body.ingredients)
+    const removeIngredients = JSON.parse(request.body.removeIngredients)
+    const steps = JSON.parse(request.body.steps)
+    const removeSteps = JSON.parse(request.body.removeSteps)
+    try {
       if(request.files) {
         if(typeof request.files.imageurl !== "undefined") { 
           let getFileName = request.files.imageurl.name.split("_")[0]
@@ -452,7 +461,6 @@ module.exports = {
           }
         }
       }
-
       // Create or Update Ingredients Group & Ingredients Child
       for(let i = 0; i < ingredientsGroup.length; i++) {
         for (let z = 0; z < ingredients.length; z++) { 
@@ -490,7 +498,8 @@ module.exports = {
       misc.response(response, false, 200, null, null)
     } catch (error) {
       console.log(error.message) // in-development
-      misc.response(response, true, 500, "Server Error.")
+      misc.response(response, true, 500, "Server Error")
     }
   }
+
 }

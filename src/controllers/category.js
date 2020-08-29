@@ -4,15 +4,17 @@ const Category = require('../models/Category');
 const misc = require('../helpers/response');
 
 module.exports = {
-  all: async (request, response) => {
+  
+  getCategories: async (request, response) => {
     try {
-      const payload = await Category.all();
+      const payload = await Category.getCategories();
       misc.response(response, 200, false, null, payload);
     } catch(error) {
       console.log(error.message); // in-development
-      misc.response(response, 500, true, 'Server Error.');
+      misc.response(response, 500, true, 'Server Error');
     }
   },
+
   store: async (request, response) => {
     const id = uuidv4();
     const title = request.body.title;
@@ -27,7 +29,8 @@ module.exports = {
       misc.response(response, 200, false, null, payload);
     } catch(error) {
       console.log(error.message); // in-development
-      misc.response(response, 500, true, 'Server Error.');
+      misc.response(response, 500, true, 'Server Error');
     }
   }
+  
 }
