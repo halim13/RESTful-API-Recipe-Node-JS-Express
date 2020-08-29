@@ -80,7 +80,7 @@ module.exports = {
   },
   searchSuggestions: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageUrl
+      const query = `SELECT a.uuid, a.title, a.imageurl
       FROM recipes a
       INNER JOIN search_suggestions b ON a.uuid  = b.recipe_id
       WHERE b.views > 0
