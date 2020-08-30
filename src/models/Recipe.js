@@ -188,6 +188,34 @@ module.exports = {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO recipes SET ?`
       connection.query(query, data, (error, result) => {
+        if(error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  checkDemo: (userId) => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT COUNT(*) AS total FROM demo a 
+      INNER JOIN recipes c  ON c.uuid = a.recipe_id
+      WHERE a.user_id = '${userId}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  storeDemo: data => {
+    return new Promise((resolve, reject) => {
+      const query =  `INSERT INTO demo SET ?`
+      connection.query(query, data, (error, result) => {
         if (error) {
           reject(new Error(error))
         } else {

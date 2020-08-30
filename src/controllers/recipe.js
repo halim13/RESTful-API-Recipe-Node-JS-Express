@@ -251,6 +251,7 @@ module.exports = {
   },
 
   store: async (request, response) => {
+    let responseMessage = ""
     let filename = ""
     const pathStepsImages = "/public/images/steps-images/"
     const pathRecipe = "/public/images/recipe/"
@@ -289,67 +290,83 @@ module.exports = {
         this.user_id = userId
       })()
 
-      // Store Recipe
-      await Recipe.store(dataRecipe)
+      const checkDemo = await Recipe.checkDemo(userId)
 
-      for (let i = 0; i < steps.length; i++) {
-        let stepsId = steps[i].uuid
-        let checkStepsImages = await Recipe.checkStepsImages(stepsId)
-        await Recipe.storeSteps(stepsId, steps[i].item, dataRecipe.uuid) 
-        if(checkStepsImages.length === 3) {
-          for (let z = 0; z < 3; z++) {
-            if (request.files) {
-              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
-                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
-                let file = request.files[`imageurl-${i}-${z}`]
-                let getFileName = file.name.split("_")[0]
-                let getFileExt = file.name.split(".").pop()
-                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
-                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
-                await Recipe.storeStepsImage(
-                  stepsImagesId,
-                  filename,
-                  stepsId
-                )   
+      if(checkDemo[0].total == 2) {
+        responseMessage = 'ALERTDEMO'
+      } else {
+        let dataDemo = {
+          "uuid": uuidv4(),
+          "user_id": userId,
+          "recipe_id": dataRecipe.uuid
+        }
+
+        // Store Demo
+        await Recipe.storeDemo(dataDemo)
+     
+     
+        // Store Recipe
+        await Recipe.store(dataRecipe)
+
+        for (let i = 0; i < steps.length; i++) {
+          let stepsId = steps[i].uuid
+          let checkStepsImages = await Recipe.checkStepsImages(stepsId)
+          await Recipe.storeSteps(stepsId, steps[i].item, dataRecipe.uuid) 
+          if(checkStepsImages.length === 3) {
+            for (let z = 0; z < 3; z++) {
+              if (request.files) {
+                if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                  let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                  let file = request.files[`imageurl-${i}-${z}`]
+                  let getFileName = file.name.split("_")[0]
+                  let getFileExt = file.name.split(".").pop()
+                  let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                  file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                  await Recipe.storeStepsImage(
+                    stepsImagesId,
+                    filename,
+                    stepsId
+                  )   
+                }
               }
             }
+          } else {
+            for (let z = 0; z < 3; z++) {
+              if (request.files) {
+                if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                  let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                  let file = request.files[`imageurl-${i}-${z}`]
+                  let getFileName = file.name.split("_")[0]
+                  let getFileExt = file.name.split(".").pop()
+                  let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                  file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                  await Recipe.storeStepsImage(
+                    stepsImagesId,
+                    filename,
+                    stepsId
+                  )   
+                } else {
+                  await Recipe.storeStepsImage(
+                    uuidv4(),
+                    'default-thumbnail.jpg',
+                    stepsId
+                  )   
+                }
+              } 
+            }
+          }    
+        }
+             
+        // Store or Update Ingredients Group & Ingredients Child
+        for(let i = 0; i < ingredientsGroup.length; i++) {
+          for (let z = 0; z < ingredients.length; z++) { 
+            await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
+            await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
           }
-        } else {
-          for (let z = 0; z < 3; z++) {
-            if (request.files) {
-              if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
-                let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
-                let file = request.files[`imageurl-${i}-${z}`]
-                let getFileName = file.name.split("_")[0]
-                let getFileExt = file.name.split(".").pop()
-                let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
-                file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
-                await Recipe.storeStepsImage(
-                  stepsImagesId,
-                  filename,
-                  stepsId
-                )   
-              } else {
-                await Recipe.storeStepsImage(
-                  uuidv4(),
-                  'default-thumbnail.jpg',
-                  stepsId
-                )   
-              }
-            } 
-          }
-        }    
-      }
-           
-      // Store or Update Ingredients Group & Ingredients Child
-      for(let i = 0; i < ingredientsGroup.length; i++) {
-        for (let z = 0; z < ingredients.length; z++) { 
-          await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
-          await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
         }
       }
      
-      misc.response(response, false, 200, null, null)
+      misc.response(response, false, 200, null, responseMessage)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, true, 500, "Server Error")
