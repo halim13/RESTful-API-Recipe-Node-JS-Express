@@ -31,7 +31,7 @@ module.exports = {
   updateProfile: async (request, response) => {
     const path = "/public/images/avatar/"
     const userId = request.params.userId
-    const userDb = await User.getProfile(userId)
+    const userDb = await User.getCurrentProfile(userId)
     let filename
   
     try {

@@ -7,7 +7,8 @@ const slug = require("../helpers/slugify")
 
 Route
 	.get("/", recipe.getRecipes)
-	.get("/show/:recipeId", recipe.show)
+	.get("/show/me/:userId", recipe.showMe)
+	.get("/show/:categoryId", recipe.show)
 	.get("/detail/:recipeId", recipe.detail)
 	.get("/edit/:recipeId", recipe.edit)
 	.get("/popular-views", recipe.popularViews)

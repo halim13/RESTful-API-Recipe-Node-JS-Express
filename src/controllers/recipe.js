@@ -16,21 +16,21 @@ module.exports = {
     }
   },
 
-  show: async (request, response) => {
-    const categoryId = request.params.recipeId
+  showMe: async(request, response) => {
     const page = parseInt(request.query.page) || 1
     const search = request.query.search || ""
     const limit = request.query.limit || 5
     const offset = (page - 1) * limit
     try {
-      const category = await Recipe.getCategory(categoryId)
-      const categoryTotal = await Recipe.total(category[0].id)
-      const resultTotal = limit > 5 ? Math.ceil(categoryTotal[0].total / limit) : categoryTotal[0].total
+      const userId = request.params.userId
+      const user = await Recipe.getUser(userId)
+      const userTotal = await Recipe.getTotalByUserId(user[0].uuid)
+      const resultTotal = limit > 5 ? Math.ceil(userTotal[0].total / limit) : userTotal[0].total
       const lastPage = Math.ceil(resultTotal / limit)
       const prevPage = page === 1 ? 1 : page - 1
       const nextPage = page === lastPage ? 1 : page + 1
-      const payload = await Recipe.show(offset, limit, search, categoryId)
-      const pageDetail = {
+      const payload = await Recipe.me(offset, limit, search, userId)
+      const payloadPageDetail = {
         total: resultTotal,
         per_page: lastPage,
         next_page: nextPage,
@@ -39,7 +39,37 @@ module.exports = {
         next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
         prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
       }
-      misc.responsePagination(response, 200, false, null, pageDetail, payload)
+      misc.responsePagination(response, 200, false, null, payloadPageDetail, payload)
+    } catch(error) {
+      console.log(error.message) // in-development
+      misc.response(response, 500, true, "Server Error")
+    }
+  },
+
+  show: async (request, response) => {
+    const categoryId = request.params.categoryId
+    const page = parseInt(request.query.page) || 1
+    const search = request.query.search || ""
+    const limit = request.query.limit || 5
+    const offset = (page - 1) * limit
+    try {
+      const category = await Recipe.getCategory(categoryId)
+      const categoryTotal = await Recipe.getTotalByCategoryId(category[0].uuid)
+      const resultTotal = limit > 5 ? Math.ceil(categoryTotal[0].total / limit) : categoryTotal[0].total
+      const lastPage = Math.ceil(resultTotal / limit)
+      const prevPage = page === 1 ? 1 : page - 1
+      const nextPage = page === lastPage ? 1 : page + 1
+      const payload = await Recipe.show(offset, limit, search, categoryId)
+      const payloadPageDetail = {
+        total: resultTotal,
+        per_page: lastPage,
+        next_page: nextPage,
+        prev_page: prevPage,
+        current_page: page,
+        next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
+        prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
+      }
+      misc.responsePagination(response, 200, false, null, payloadPageDetail, payload)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")

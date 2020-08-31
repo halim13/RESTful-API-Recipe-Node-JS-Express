@@ -17,7 +17,20 @@ module.exports = {
 
   getCategory: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM categories a WHERE a.uuid = '${uuid}'`
+      const query = `SELECT * FROM categories WHERE uuid = '${uuid}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  getUser: uuid => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT * FROM users WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -30,7 +43,7 @@ module.exports = {
 
   getCategoryByTitle: title => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM categories a WHERE a.title = '${title}'`
+      const query = `SELECT * FROM categories WHERE title = '${title}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -41,9 +54,22 @@ module.exports = {
     })
   },
 
-  total: categoryId => {
+  getTotalByCategoryId: categoryId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT COUNT(*) AS total FROM recipes WHERE category_id = '${categoryId}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  getTotalByUserId: userId => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT COUNT(*) AS total FROM recipes WHERE user_id = '${userId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -144,6 +170,22 @@ module.exports = {
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error())
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  me: (offset, limit, search, userId) => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT a.uuid, a.title, a.duration, a.portion, a.imageurl, a.user_id, b.name FROM recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
+      WHERE a.user_id = '${userId}' AND LOWER(a.title) LIKE '%${search}%'
+      LIMIT ${offset}, ${limit}`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
         } else {
           resolve(result)
         }
