@@ -297,6 +297,13 @@ module.exports = {
     const steps = JSON.parse(request.body.steps)
 
     try {
+
+      const checkDemo = await Recipe.checkDemo(userId)
+
+      if(checkDemo[0].total == 2) {
+        responseMessage = 'ALERTDEMO'
+      } else {
+
       if(request.files) {
         if(typeof request.files.imageurl !== "undefined") {
           let getFileName = request.files.imageurl.name.split("_")[0]
@@ -320,11 +327,6 @@ module.exports = {
         this.user_id = userId
       })()
 
-      const checkDemo = await Recipe.checkDemo(userId)
-
-      if(checkDemo[0].total == 2) {
-        responseMessage = 'ALERTDEMO'
-      } else {
         let dataDemo = {
           "uuid": uuidv4(),
           "user_id": userId,

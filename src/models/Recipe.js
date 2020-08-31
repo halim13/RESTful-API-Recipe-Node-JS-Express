@@ -114,11 +114,12 @@ module.exports = {
 
   searchSuggestions: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageurl
+      const query = `SELECT a.uuid, a.title, a.duration, a.isfavorite, a.portion, a.user_id, c.name, a.imageurl
       FROM recipes a
+      INNER JOIN users c ON a.user_id = c.uuid
       INNER JOIN search_suggestions b ON a.uuid  = b.recipe_id
       WHERE b.views > 0
-      ORDER BY views DESC LIMIT 3`
+      ORDER BY b.views DESC LIMIT 3`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -163,7 +164,7 @@ module.exports = {
 
   favorite: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavorite, b.name
+      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavorite, a.user_id, b.name
       FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
       WHERE isfavorite = 1`
@@ -267,9 +268,9 @@ module.exports = {
     })
   },
 
-  storeSearchSuggestions: (uuid, mealId) => {
+  storeSearchSuggestions: (uuid, recipeId) => {
     return new Promise((resolve, reject) => {
-      const query = `INSERT INTO search_suggestions (uuid, views, meal_id) VALUES('${uuid}', 1, '${mealId}')`
+      const query = `INSERT INTO search_suggestions (uuid, views, recipe_id) VALUES('${uuid}', 1, '${recipeId}')`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
