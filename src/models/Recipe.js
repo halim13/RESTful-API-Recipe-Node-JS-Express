@@ -151,7 +151,18 @@ module.exports = {
 
   detail: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.imageUrl, a.portion, a.isfavorite FROM recipes a WHERE uuid = '${uuid}'`
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.imageurl, 
+      a.portion,
+      a.duration,
+      a.user_id, 
+      b.name,
+      a.isfavorite FROM 
+      recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
+      WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))

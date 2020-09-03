@@ -86,6 +86,21 @@ module.exports = {
       let stepsData = []
 
 
+      let recipesData = []
+      recipesData.push({
+        uuid: recipes[0].uuid,
+        title: recipes[0].title,
+        imageurl: recipes[0].imageurl,
+        portion: recipes[0].portion,
+        duration: recipes[0].duration,
+        isfavorite: recipes[0].isfavorite,
+        user: {
+          uuid: recipes[0].user_id,
+          name: recipes[0].name
+        }
+      })
+
+
       function stepsImages(i) {
         let stepsImagesData = []
         let id = steps[i].id
@@ -135,7 +150,7 @@ module.exports = {
       }
 
       const payload = {
-        recipes,
+        recipes: recipesData,
         ingredientsGroup: ingredientsGroupsData,
         steps: stepsData
       }
