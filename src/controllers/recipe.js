@@ -163,17 +163,17 @@ module.exports = {
 
   popularViews: async (request, response) => {
     let payload
-    const id = request.params.id
+    const recipeId = request.params.recipeId
     const idSearchSuggestions = uuidv4()
     try {
-      const checkReservedSearchSuggestions = await Recipe.checkReservedSearchSuggestions(id)
+      const checkReservedSearchSuggestions = await Recipe.checkReservedSearchSuggestions(recipeId)
       if (checkReservedSearchSuggestions.length !== 0) {
-        if (checkReservedSearchSuggestions[0].recipe_id === id) {
-          const getCountViews = await Recipe.getCountViews(id)
-          payload = await Recipe.updateSearchSuggestions(getCountViews[0].views, id)
+        if (checkReservedSearchSuggestions[0].recipe_id === recipeId) {
+          const getCountViews = await Recipe.getCountViews(recipeId)
+          payload = await Recipe.updateSearchSuggestions(getCountViews[0].views, recipeId)
         }
       } else {
-        payload = await Recipe.storeSearchSuggestions(idSearchSuggestions, id)
+        payload = await Recipe.storeSearchSuggestions(idSearchSuggestions, recipeId)
       }
       misc.response(response, 200, false, null, payload)
     } catch (error) {

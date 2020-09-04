@@ -411,7 +411,7 @@ module.exports = {
 
   checkReservedSearchSuggestions: recipeId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.meal_id FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
+      const query = `SELECT a.recipe_id FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))

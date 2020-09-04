@@ -11,7 +11,7 @@ Route
 	.get("/show/:categoryId", recipe.show)
 	.get("/detail/:recipeId", recipe.detail)
 	.get("/edit/:recipeId", recipe.edit)
-	.get("/popular-views", recipe.popularViews)
+	.get("/popular-views/:recipeId", recipe.popularViews)
 	.get("/search-suggestions", recipe.searchSuggestions)
 	.get("/favorite", recipe.favorite)
 	.put("/update/favorite/:recipeId", recipe.updateFavorite)
