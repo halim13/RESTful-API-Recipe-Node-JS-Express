@@ -74,11 +74,11 @@ module.exports = {
     try {
       const user = await User.login(email)
       if (user.length === 0) {
-        throw new UserNotExists("User not exists.")
+        throw new UserNotExists("User not exists")
       }
       const isMatch = await bcrypt.compare(password, user[0].password)
       if (!isMatch) {
-        throw new InvalidCredentials("Invalid Credentials.")
+        throw new InvalidCredentials("Invalid Credentials")
       }
       const payload = {
         user: {
@@ -108,10 +108,10 @@ module.exports = {
       const salt = await bcrypt.genSalt(10)
       const passwordHash = await bcrypt.hash(password, salt)
       if (nameExists.length === 1) {
-        throw new NameAlreadyExists("Name already exists.")
+        throw new NameAlreadyExists("Name already exists")
       }
       if (emailExists.length === 1) {
-        throw new EmailAddressAlreadyExists("E-mail Address already exists.")
+        throw new EmailAddressAlreadyExists("E-mail Address already exists")
       }
       const data = {
         uuid,
