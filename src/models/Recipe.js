@@ -1,84 +1,6 @@
 const connection = require("../configs/db")
 
 module.exports = {
-
-  getCategories: () => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM categories`
-      connection.query(query, (error, result) => {
-        if(error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  getCategory: uuid => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM categories WHERE uuid = '${uuid}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  getUser: uuid => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM users WHERE uuid = '${uuid}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  getCategoryByTitle: title => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM categories WHERE title = '${title}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  getTotalByCategoryId: categoryId => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT COUNT(*) AS total FROM recipes WHERE category_id = '${categoryId}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  getTotalByUserId: userId => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT COUNT(*) AS total FROM recipes WHERE user_id = '${userId}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
   
   getRecipes: () => {
     return new Promise((resolve, reject) => {
@@ -114,12 +36,24 @@ module.exports = {
 
   searchSuggestions: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.duration, a.isfavorite, a.portion, a.user_id, c.name, a.imageurl
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.duration, 
+      a.isfavorite, 
+      a.portion, 
+      a.imageurl,
+      a.user_id, 
+      b.name,
+      c.title as category_title,
+      d.name as country_name
       FROM recipes a
-      INNER JOIN users c ON a.user_id = c.uuid
-      INNER JOIN search_suggestions b ON a.uuid  = b.recipe_id
-      WHERE b.views > 0
-      ORDER BY b.views DESC LIMIT 3`
+      INNER JOIN users b ON a.user_id = b.uuid
+      INNER JOIN search_suggestions e ON a.uuid  = e.recipe_id
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
+      WHERE e.views > 0
+      ORDER BY e.views DESC LIMIT 3`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -157,11 +91,15 @@ module.exports = {
       a.imageurl, 
       a.portion,
       a.duration,
-      a.user_id, 
+      a.isfavorite,
+      a.user_id,
       b.name,
-      a.isfavorite FROM 
-      recipes a
+      c.title as category_title,
+      d.name as country_name
+      FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
       WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
@@ -175,7 +113,16 @@ module.exports = {
 
   favorite: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.title, a.imageUrl, a.portion, a.duration, a.isfavorite, a.user_id, b.name
+      const query = `SELECT 
+      a.id, 
+      a.uuid, 
+      a.title, 
+      a.imageUrl, 
+      a.portion, 
+      a.duration, 
+      a.isfavorite, 
+      a.user_id, 
+      b.name
       FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
       WHERE isfavorite = 1`
@@ -191,8 +138,20 @@ module.exports = {
 
   me: (offset, limit, search, userId) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.title, a.duration, a.portion, a.imageurl, a.user_id, b.name FROM recipes a
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.duration, 
+      a.portion, 
+      a.imageurl, 
+      a.user_id,
+      b.name,
+      c.title as category_title,
+      d.name as country_name
+      FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
       WHERE a.user_id = '${userId}' AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
       connection.query(query, (error, result) => {
@@ -207,10 +166,20 @@ module.exports = {
 
   show: (offset, limit, search, categoryId) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT DISTINCT a.uuid, a.title, a.duration, a.portion, a.imageurl, a.user_id, c.name, d.title as category_title
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.duration,
+      a.portion, 
+      a.imageurl,
+      a.user_id,
+      b.name,
+      c.title as category_title,
+      d.name as country_name
       FROM recipes a
-      INNER JOIN users c ON a.user_id = c.uuid
-      LEFT JOIN categories d ON a.category_id = d.uuid
+      INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
       WHERE a.category_id = '${categoryId}' AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
       connection.query(query, (error, result) => {
@@ -225,7 +194,7 @@ module.exports = {
 
   edit: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.duration, a.title, a.portion, a.imageUrl, a.category_id
+      const query = `SELECT a.uuid, a.duration, a.title, a.portion, a.imageUrl, a.category_id, a.country_id
       FROM recipes a
       WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {

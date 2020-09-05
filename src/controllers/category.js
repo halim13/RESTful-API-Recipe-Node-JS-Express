@@ -15,6 +15,16 @@ module.exports = {
     }
   },
 
+  getFoodCountries: async (request, response) => {
+    try {
+      const payload  = await Category.getFoodCountries()
+      misc.response(response, 200, false, null, payload)
+    } catch(error) {
+      console.log(error.message) // in-development
+      misc.response(response, 500, true, 'Server Error')
+    }
+  },
+
   store: async (request, response) => {
     const id = uuidv4();
     const title = request.body.title;

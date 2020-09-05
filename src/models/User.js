@@ -1,5 +1,6 @@
 const connection = require("../configs/db")
 module.exports = {
+
   auth: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.id, a.uuid, a.name, a.email, a.avatar, a.bio FROM users a WHERE a.uuid = '${uuid}'`
@@ -12,6 +13,7 @@ module.exports = {
       })
     })
   },
+
   checkName: name => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.name FROM users a WHERE LOWER(a.name) = '${name}'`
@@ -24,6 +26,7 @@ module.exports = {
       })
     })
   },
+
   checkEmail: email => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.email FROM users a WHERE a.email = '${email}'`
@@ -36,6 +39,7 @@ module.exports = {
       })
     })
   },
+
   checkAvatarExists: userId => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.avatar FROM users a WHERE a.id = '${userId}'`
@@ -48,6 +52,7 @@ module.exports = {
       })
     })
   },
+
   getUser: email => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.* FROM users a WHERE a.email = '${email}'`
@@ -60,6 +65,33 @@ module.exports = {
       })
     })
   },
+
+  getUserByUuid: uuid => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT * FROM users WHERE uuid = '${uuid}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  getTotalByUserId: userId => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT COUNT(*) AS total FROM recipes WHERE user_id = '${userId}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
   getCurrentProfile: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
@@ -72,6 +104,7 @@ module.exports = {
       })
     })
   },
+
   viewProfile: uuid => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
@@ -84,6 +117,7 @@ module.exports = {
       })
     })
   },
+
   login: email => {
     return new Promise((resolve, reject) => {
       const query = `SELECT a.id, a.uuid, a.password FROM users a WHERE email = ?`
@@ -96,6 +130,7 @@ module.exports = {
       })
     })
   },
+
   register: data => {
     return new Promise((resolve, reject) => {
       const query = `INSERT INTO users SET ?`
@@ -108,6 +143,7 @@ module.exports = {
       })
     })
   },
+
   updateProfile: (data, uuid) => {
     return new Promise((resolve, reject) => {
       const query = `UPDATE users SET ? WHERE uuid = ?`
@@ -120,4 +156,5 @@ module.exports = {
       })
     })
   }
+
 }

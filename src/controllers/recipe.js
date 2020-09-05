@@ -2,6 +2,7 @@ const misc = require("../helpers/response")
 const fs = require("fs-extra")
 const { v4: uuidv4 } = require("uuid")
 const Recipe = require("../models/Recipe")
+const Category = require("../models/Category")
 const User = require("../models/User")
 
 module.exports = {
@@ -23,13 +24,33 @@ module.exports = {
     const offset = (page - 1) * limit
     try {
       const userId = request.params.userId
-      const user = await Recipe.getUser(userId)
-      const userTotal = await Recipe.getTotalByUserId(user[0].uuid)
+      const user = await User.getUserByUuid(userId)
+      const userTotal = await User.getTotalByUserId(user[0].uuid)
       const resultTotal = limit > 5 ? Math.ceil(userTotal[0].total / limit) : userTotal[0].total
       const lastPage = Math.ceil(resultTotal / limit)
       const prevPage = page === 1 ? 1 : page - 1
       const nextPage = page === lastPage ? 1 : page + 1
-      const payload = await Recipe.me(offset, limit, search, userId)
+      const recipesData = await Recipe.me(offset, limit, search, userId)
+      let recipes = []
+      for (let i = 0; i < recipesData.length; i++) {   
+        recipes.push({
+          uuid: recipesData[i].uuid,
+          title: recipesData[i].title,
+          duration: recipesData[i].duration,
+          portion: recipesData[i].portion,
+          imageurl: recipesData[i].imageurl,
+          user: {
+            uuid: recipesData[i].user_id,
+            name: recipesData[i].name
+          },
+          category: {
+            title: recipesData[i].category_title
+          },
+          country: {
+            name: recipesData[i].country_name
+          }
+        })
+      }
       const payloadPageDetail = {
         total: resultTotal,
         per_page: lastPage,
@@ -39,7 +60,7 @@ module.exports = {
         next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
         prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
       }
-      misc.responsePagination(response, 200, false, null, payloadPageDetail, payload)
+      misc.responsePagination(response, 200, false, null, payloadPageDetail, recipes)
     } catch(error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
@@ -53,13 +74,33 @@ module.exports = {
     const limit = request.query.limit || 5
     const offset = (page - 1) * limit
     try {
-      const category = await Recipe.getCategory(categoryId)
-      const categoryTotal = await Recipe.getTotalByCategoryId(category[0].uuid)
+      const category = await Category.getCategory(categoryId)
+      const categoryTotal = await Category.getTotalByCategoryId(category[0].uuid)
       const resultTotal = limit > 5 ? Math.ceil(categoryTotal[0].total / limit) : categoryTotal[0].total
       const lastPage = Math.ceil(resultTotal / limit)
       const prevPage = page === 1 ? 1 : page - 1
       const nextPage = page === lastPage ? 1 : page + 1
-      const payload = await Recipe.show(offset, limit, search, categoryId)
+      const recipesData = await Recipe.show(offset, limit, search, categoryId)
+      let recipes = []
+      for (let i = 0; i < recipesData.length; i++) {   
+        recipes.push({
+          uuid: recipesData[i].uuid,
+          title: recipesData[i].title,
+          duration: recipesData[i].duration,
+          portion: recipesData[i].portion,
+          imageurl: recipesData[i].imageurl,
+          user: {
+            uuid: recipesData[i].user_id,
+            name: recipesData[i].name
+          },
+          category: {
+            title: recipesData[i].category_title
+          },
+          country: {
+            name: recipesData[i].country_name
+          }
+        })
+      }
       const payloadPageDetail = {
         total: resultTotal,
         per_page: lastPage,
@@ -69,7 +110,7 @@ module.exports = {
         next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
         prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
       }
-      misc.responsePagination(response, 200, false, null, payloadPageDetail, payload)
+      misc.responsePagination(response, 200, false, null, payloadPageDetail, recipes)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
@@ -97,6 +138,12 @@ module.exports = {
         user: {
           uuid: recipes[0].user_id,
           name: recipes[0].name
+        },
+        category: {
+          title: recipes[0].category_title
+        },
+        country: {
+          name: recipes[0].country_name
         }
       })
 
@@ -194,8 +241,28 @@ module.exports = {
   
   searchSuggestions: async (request, response) => {
     try {
-      const payload = await Recipe.searchSuggestions()
-      misc.response(response, 200, false, null, payload)
+      const recipesData = await Recipe.searchSuggestions()
+      let recipes = []
+      for (let i = 0; i < recipesData.length; i++) {   
+        recipes.push({
+          uuid: recipesData[i].uuid,
+          title: recipesData[i].title,
+          duration: recipesData[i].duration,
+          portion: recipesData[i].portion,
+          imageurl: recipesData[i].imageurl,
+          user: {
+            uuid: recipesData[i].user_id,
+            name: recipesData[i].name
+          },
+          category: {
+            title: recipesData[i].category_title
+          },
+          country: {
+            name: recipesData[i].country_name
+          }
+        })
+      }
+      misc.response(response, 200, false, null, recipes)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
@@ -205,7 +272,8 @@ module.exports = {
   edit: async (request, response) => {
     const recipeId = request.params.recipeId
     try {
-      const allCategories = await Recipe.getCategories()
+      const allCategories = await Category.getCategories()
+      const allFoodCountries = await Category.getFoodCountries()
       const recipes = await Recipe.edit(recipeId)
       const ingredientsGroup = await Recipe.ingredientsGroup(recipeId)
       const steps = await Recipe.steps(recipeId)
@@ -244,6 +312,17 @@ module.exports = {
         }
         return category_list
       }
+      function foodCountryList() {
+        let food_country_list = []
+        for (let i = 0; i < allFoodCountries.length; i++) {
+          food_country_list.push({
+            id: allFoodCountries[i].id,
+            uuid: allFoodCountries[i].uuid,
+            name: allFoodCountries[i].name,
+          })
+        }
+        return food_country_list
+      }
       function ingredients(i) {
         let ingredientsData = []
         let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
@@ -272,7 +351,9 @@ module.exports = {
       }
       for (let i = 0; i < recipes.length; i++) {
         let categoryId = recipes[i].category_id
-        const categories = await Recipe.getCategory(categoryId)
+        let countryId = recipes[i].country_id
+        const categories = await Category.getCategory(categoryId)
+        const countries = await Category.getCountry(countryId)
         recipesData.push({
           uuid: recipes[i].uuid,
           title: recipes[i].title,
@@ -280,7 +361,9 @@ module.exports = {
           imageUrl: recipes[i].imageUrl,
           portion: recipes[i].portion,
           category_name: categories[0].title,
+          food_country_name: countries[0].name,
           category_list: categoryList(),
+          food_country_list: foodCountryList()
         })
       }
       const payload = {
@@ -304,7 +387,9 @@ module.exports = {
     const duration = request.body.duration
     const portion = request.body.portion
     const categoryName = request.body.categoryName
-    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
+    const countryName = request.body.foodCountryName
+    const getCategoryByTitle = await Category.getCategoryByTitle(categoryName)
+    const getFoodCountryByName = await Category.getFoodCountryByName(countryName)
     const userId = request.body.userId
     const username = await User.auth(userId)
     const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
@@ -332,6 +417,7 @@ module.exports = {
         this.uuid = uuidv4()
         this.title = title
         this.category_id = getCategoryByTitle[0].uuid
+        this.country_id = getFoodCountryByName[0].uuid
         if(request.files) {
           if(typeof request.files.imageurl !== "undefined") {
             this.imageurl = filename
@@ -440,8 +526,10 @@ module.exports = {
     const title = request.body.title
     const duration = request.body.duration
     const categoryName = request.body.categoryName
+    const foodCountryName = request.body.foodCountryName
     const portion = request.body.portion
-    const getCategoryByTitle = await Recipe.getCategoryByTitle(categoryName)
+    const getCategoryByTitle = await Category.getCategoryByTitle(categoryName)
+    const getFoodCountryByName = await Category.getFoodCountryByName(foodCountryName)
     const userId = request.body.userId
     const username = await User.auth(userId)
     const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
@@ -471,6 +559,7 @@ module.exports = {
         this.portion = portion
         this.duration = duration
         this.category_id = getCategoryByTitle[0].uuid
+        this.country_id = getFoodCountryByName[0].uuid
         this.user_id = userId
       })
 
