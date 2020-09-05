@@ -9,6 +9,7 @@ Route
 	.get("/", recipe.getRecipes)
 	.get("/show/me/:userId", recipe.showMe)
 	.get("/show/:categoryId", recipe.show)
+	.get("/show-draft", recipe.showDraft)
 	.get("/detail/:recipeId", recipe.detail)
 	.get("/edit/:recipeId", recipe.edit)
 	.get("/popular-views/:recipeId", recipe.popularViews)
@@ -16,6 +17,7 @@ Route
 	.get("/favorite", recipe.favorite)
 	.put("/update/favorite/:recipeId", recipe.updateFavorite)
 	.put("/update/:recipeId", recipe.update)
+	.put("/update-draft/:recipeId", recipe.updateDraft)
 	.post("/store", recipe.store)
 
 module.exports = Route

@@ -152,7 +152,9 @@ module.exports = {
       INNER JOIN users b ON a.user_id = b.uuid
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.user_id = '${userId}' AND LOWER(a.title) LIKE '%${search}%'
+      WHERE a.user_id = '${userId}' 
+      AND a.ispublished = '1' 
+      AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
       connection.query(query, (error, result) => {
         if (error) {
@@ -180,8 +182,38 @@ module.exports = {
       INNER JOIN users b ON a.user_id = b.uuid
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.category_id = '${categoryId}' AND LOWER(a.title) LIKE '%${search}%'
+      WHERE a.category_id = '${categoryId}' 
+      AND a.ispublished = '1' 
+      AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  showDraft: () => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.duration,
+      a.portion,
+      a.ispublished, 
+      a.imageurl,
+      a.user_id,
+      b.name,
+      c.title as category_title,
+      d.name as country_name
+      FROM recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
+      WHERE a.ispublished = '0'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))

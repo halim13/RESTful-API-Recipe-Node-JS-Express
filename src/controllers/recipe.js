@@ -117,6 +117,39 @@ module.exports = {
     }
   },
 
+  showDraft: async (request, response) => {
+ 
+    try {
+      const recipesData = await Recipe.showDraft()
+      let recipes = []
+      for (let i = 0; i < recipesData.length; i++) {   
+        recipes.push({
+          uuid: recipesData[i].uuid,
+          title: recipesData[i].title,
+          duration: recipesData[i].duration,
+          portion: recipesData[i].portion,
+          ispublished: recipesData[i].ispublished,
+          imageurl: recipesData[i].imageurl,
+          user: {
+            uuid: recipesData[i].user_id,
+            name: recipesData[i].name
+          },
+          category: {
+            title: recipesData[i].category_title
+          },
+          country: {
+            name: recipesData[i].country_name
+          }
+        })
+      }
+   
+      misc.response(response, 200, false, null, recipes)
+    } catch (error) {
+      console.log(error.message) // in-development
+      misc.response(response, 500, true, "Server Error")
+    }
+  },
+
   detail: async (request, response) => {
     const recipeId = request.params.recipeId
     try {
@@ -360,6 +393,7 @@ module.exports = {
           duration: recipes[i].duration,
           imageUrl: recipes[i].imageUrl,
           portion: recipes[i].portion,
+          ispublished: recipes[i].ispublished,
           category_name: categories[0].title,
           food_country_name: countries[0].name,
           category_list: categoryList(),
@@ -379,6 +413,136 @@ module.exports = {
   },
 
   store: async (request, response) => {
+    let responseMessage = ""
+    let filename = ""
+    const pathStepsImages = "/public/images/steps-images/"
+    const pathRecipe = "/public/images/recipe/"
+    const title = request.body.title
+    const duration = request.body.duration
+    const portion = request.body.portion
+    const categoryName = request.body.categoryName
+    const countryName = request.body.foodCountryName
+    const isPublished = request.body.isPublished
+    const getCategoryByTitle = await Category.getCategoryByTitle(categoryName)
+    const getFoodCountryByName = await Category.getFoodCountryByName(countryName)
+    const userId = request.body.userId
+    const username = await User.auth(userId)
+    const ingredientsGroup = JSON.parse(request.body.ingredientsGroup)
+    const ingredients = JSON.parse(request.body.ingredients)
+    const steps = JSON.parse(request.body.steps)
+
+    try {
+
+      const checkDemo = await Recipe.checkDemo(userId)
+
+      if(checkDemo[0].total == 2) {
+        responseMessage = 'ALERTDEMO'
+      } else {
+
+      if(request.files) {
+        if(typeof request.files.imageurl !== "undefined") {
+          let getFileName = request.files.imageurl.name.split("_")[0]
+          let getFileExt = request.files.imageurl.name.split(".").pop()
+          filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+          request.files.imageurl.mv(`${process.cwd()}${pathRecipe}${filename}`)
+        }
+      }
+
+      let dataRecipe = new (function () {
+        this.uuid = uuidv4()
+        this.title = title
+        this.category_id = getCategoryByTitle[0].uuid
+        this.country_id = getFoodCountryByName[0].uuid
+        if(request.files) {
+          if(typeof request.files.imageurl !== "undefined") {
+            this.imageurl = filename
+          }
+        }
+        this.portion = portion
+        this.duration = duration
+        this.ispublished = parseInt(isPublished)
+        this.user_id = userId
+      })()
+
+        let dataDemo = {
+          "uuid": uuidv4(),
+          "user_id": userId,
+          "recipe_id": dataRecipe.uuid
+        }
+
+        // Store Demo
+        await Recipe.storeDemo(dataDemo)
+     
+     
+        // Store Recipe
+        await Recipe.store(dataRecipe)
+
+        for (let i = 0; i < steps.length; i++) {
+          let stepsId = steps[i].uuid
+          let checkStepsImages = await Recipe.checkStepsImages(stepsId)
+          await Recipe.storeSteps(stepsId, steps[i].item, dataRecipe.uuid) 
+          if(checkStepsImages.length === 3) {
+            for (let z = 0; z < 3; z++) {
+              if (request.files) {
+                if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                  let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                  let file = request.files[`imageurl-${i}-${z}`]
+                  let getFileName = file.name.split("_")[0]
+                  let getFileExt = file.name.split(".").pop()
+                  let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                  file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                  await Recipe.storeStepsImage(
+                    stepsImagesId,
+                    filename,
+                    stepsId
+                  )   
+                }
+              }
+            }
+          } else {
+            for (let z = 0; z < 3; z++) {
+              if (request.files) {
+                if(typeof request.files[`imageurl-${i}-${z}`] !== "undefined") {
+                  let stepsImagesId = request.body[`stepsImagesId-${i}-${z}`];
+                  let file = request.files[`imageurl-${i}-${z}`]
+                  let getFileName = file.name.split("_")[0]
+                  let getFileExt = file.name.split(".").pop()
+                  let filename = getFileName.replace("image", `steps-images-${i}-${new Date().getUTCMilliseconds()}-${stepsImagesId}.${getFileExt}`)
+                  file.mv(`${process.cwd()}${pathStepsImages}${filename}`)
+                  await Recipe.storeStepsImage(
+                    stepsImagesId,
+                    filename,
+                    stepsId
+                  )   
+                } else {
+                  await Recipe.storeStepsImage(
+                    uuidv4(),
+                    'default-thumbnail.jpg',
+                    stepsId
+                  )   
+                }
+              } 
+            }
+          }    
+        }
+             
+        // Store or Update Ingredients Group & Ingredients Child
+        for(let i = 0; i < ingredientsGroup.length; i++) {
+          for (let z = 0; z < ingredients.length; z++) { 
+            await Recipe.storeIngredientsGroup(ingredientsGroup[i].uuid, ingredientsGroup[i].item)
+            await Recipe.storeIngredients(ingredients[z].uuid, ingredients[z].item, dataRecipe.uuid, ingredients[z].ingredient_group_id)
+          }
+        }
+      }
+     
+      misc.response(response, false, 200, null, responseMessage)
+    } catch (error) {
+      console.log(error.message) // in-development
+      misc.response(response, true, 500, "Server Error")
+    }
+  },
+
+  updateDraft: async (request, response) => {
     let responseMessage = ""
     let filename = ""
     const pathStepsImages = "/public/images/steps-images/"
@@ -425,6 +589,7 @@ module.exports = {
         }
         this.portion = portion
         this.duration = duration
+        this.ispublished = 1
         this.user_id = userId
       })()
 
@@ -527,6 +692,7 @@ module.exports = {
     const duration = request.body.duration
     const categoryName = request.body.categoryName
     const foodCountryName = request.body.foodCountryName
+    const ispublished = parseInt(request.body.isPublished)
     const portion = request.body.portion
     const getCategoryByTitle = await Category.getCategoryByTitle(categoryName)
     const getFoodCountryByName = await Category.getFoodCountryByName(foodCountryName)
@@ -558,6 +724,7 @@ module.exports = {
         }
         this.portion = portion
         this.duration = duration
+        this.ispublished = ispublished
         this.category_id = getCategoryByTitle[0].uuid
         this.country_id = getFoodCountryByName[0].uuid
         this.user_id = userId
