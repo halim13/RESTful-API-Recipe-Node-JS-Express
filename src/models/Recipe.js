@@ -118,7 +118,7 @@ module.exports = {
       const query = `SELECT 
       a.uuid, 
       a.title, 
-      a.imageUrl, 
+      a.imageurl, 
       a.portion, 
       a.duration, 
       a.isfavorite, 

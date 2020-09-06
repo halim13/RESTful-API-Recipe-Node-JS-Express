@@ -17,7 +17,6 @@ Route
 	.get("/favorite", recipe.favorite)
 	.put("/update/favorite/:recipeId", recipe.updateFavorite)
 	.put("/update/:recipeId", recipe.update)
-	.put("/update-draft/:recipeId", recipe.updateDraft)
 	.post("/store", recipe.store)
 
 module.exports = Route
