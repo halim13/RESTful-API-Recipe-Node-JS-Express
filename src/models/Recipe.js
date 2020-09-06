@@ -17,7 +17,9 @@ module.exports = {
 
   steps: recipeId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT DISTINCT a.uuid, a.body, 
+      const query = `SELECT DISTINCT 
+      a.uuid, 
+      a.body, 
       GROUP_CONCAT(b.id SEPARATOR ',') steps_images_id,
       GROUP_CONCAT(b.uuid SEPARATOR ',') steps_images_uuid, 
       GROUP_CONCAT(b.image SEPARATOR ',') steps_images_body
@@ -114,7 +116,6 @@ module.exports = {
   favorite: () => {
     return new Promise((resolve, reject) => {
       const query = `SELECT 
-      a.id, 
       a.uuid, 
       a.title, 
       a.imageUrl, 
@@ -122,9 +123,13 @@ module.exports = {
       a.duration, 
       a.isfavorite, 
       a.user_id, 
+      c.title as category_title,
+      d.name as country_name,
       b.name
       FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
       WHERE isfavorite = 1`
       connection.query(query, (error, result) => {
         if (error) {
@@ -196,7 +201,7 @@ module.exports = {
     })
   },
 
-  showDraft: () => {
+  showDraft: (offset, limit, search) => {
     return new Promise((resolve, reject) => {
       const query = `SELECT 
       a.uuid, 
@@ -213,7 +218,9 @@ module.exports = {
       INNER JOIN users b ON a.user_id = b.uuid
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.ispublished = '0'`
+      WHERE a.ispublished = '0'
+      AND LOWER(a.title) LIKE '%${search}%'
+      LIMIT ${offset}, ${limit}`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -226,7 +233,15 @@ module.exports = {
 
   edit: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.uuid, a.duration, a.title, a.portion, a.imageUrl, a.category_id, a.country_id
+      const query = `SELECT 
+      a.uuid, 
+      a.duration, 
+      a.title, 
+      a.portion, 
+      a.imageUrl, 
+      a.category_id, 
+      a.country_id,
+      a.ispublished
       FROM recipes a
       WHERE a.uuid = '${uuid}'`
       connection.query(query, (error, result) => {

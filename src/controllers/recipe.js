@@ -68,6 +68,7 @@ module.exports = {
   },
 
   show: async (request, response) => {
+
     const categoryId = request.params.categoryId
     const page = parseInt(request.query.page) || 1
     const search = request.query.search || ""
@@ -115,12 +116,17 @@ module.exports = {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
     }
+
   },
 
   showDraft: async (request, response) => {
+    const page = parseInt(request.query.page) || 1
+    const search = request.query.search || ""
+    const limit = request.query.limit || 5
+    const offset = (page - 1) * limit
  
     try {
-      const recipesData = await Recipe.showDraft()
+      const recipesData = await Recipe.showDraft(offset, limit, search)
       let recipes = []
       for (let i = 0; i < recipesData.length; i++) {   
         recipes.push({
@@ -264,8 +270,28 @@ module.exports = {
 
   favorite: async (request, response) => {
     try {
-      const payload = await Recipe.favorite()
-      misc.response(response, 200, false, null, payload)
+      const recipes = await Recipe.favorite()
+
+      let recipesData = []
+      recipesData.push({
+        uuid: recipes[0].uuid,
+        title: recipes[0].title,
+        imageurl: recipes[0].imageurl,
+        portion: recipes[0].portion,
+        duration: recipes[0].duration,
+        isfavorite: recipes[0].isfavorite,
+        user: {
+          uuid: recipes[0].user_id,
+          name: recipes[0].name
+        },
+        category: {
+          title: recipes[0].category_title
+        },
+        country: {
+          name: recipes[0].country_name
+        }
+      })
+      misc.response(response, 200, false, null, recipesData)
     } catch (error) {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
@@ -435,34 +461,34 @@ module.exports = {
 
       const checkDemo = await Recipe.checkDemo(userId)
 
-      if(checkDemo[0].total == 2) {
+      if(checkDemo[0].total == 6) {
         responseMessage = 'ALERTDEMO'
       } else {
 
-      if(request.files) {
-        if(typeof request.files.imageurl !== "undefined") {
-          let getFileName = request.files.imageurl.name.split("_")[0]
-          let getFileExt = request.files.imageurl.name.split(".").pop()
-          filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
-          request.files.imageurl.mv(`${process.cwd()}${pathRecipe}${filename}`)
-        }
-      }
-
-      let dataRecipe = new (function () {
-        this.uuid = uuidv4()
-        this.title = title
-        this.category_id = getCategoryByTitle[0].uuid
-        this.country_id = getFoodCountryByName[0].uuid
         if(request.files) {
           if(typeof request.files.imageurl !== "undefined") {
-            this.imageurl = filename
+            let getFileName = request.files.imageurl.name.split("_")[0]
+            let getFileExt = request.files.imageurl.name.split(".").pop()
+            filename = getFileName.replace("image", `recipe-${new Date().getUTCMilliseconds()}.${getFileExt}`)
+            request.files.imageurl.mv(`${process.cwd()}${pathRecipe}${filename}`)
           }
         }
-        this.portion = portion
-        this.duration = duration
-        this.ispublished = parseInt(isPublished)
-        this.user_id = userId
-      })()
+
+        let dataRecipe = new (function () {
+          this.uuid = uuidv4()
+          this.title = title
+          this.category_id = getCategoryByTitle[0].uuid
+          this.country_id = getFoodCountryByName[0].uuid
+          if(request.files) {
+            if(typeof request.files.imageurl !== "undefined") {
+              this.imageurl = filename
+            }
+          }
+          this.portion = portion
+          this.duration = duration
+          this.ispublished = parseInt(isPublished)
+          this.user_id = userId
+        })()
 
         let dataDemo = {
           "uuid": uuidv4(),
