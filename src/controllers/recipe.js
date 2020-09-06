@@ -68,7 +68,6 @@ module.exports = {
   },
 
   show: async (request, response) => {
-
     const categoryId = request.params.categoryId
     const page = parseInt(request.query.page) || 1
     const search = request.query.search || ""
@@ -116,7 +115,6 @@ module.exports = {
       console.log(error.message) // in-development
       misc.response(response, 500, true, "Server Error")
     }
-
   },
 
   showDraft: async (request, response) => {
@@ -273,24 +271,27 @@ module.exports = {
       const recipes = await Recipe.favorite()
 
       let recipesData = []
-      recipesData.push({
-        uuid: recipes[0].uuid,
-        title: recipes[0].title,
-        imageurl: recipes[0].imageurl,
-        portion: recipes[0].portion,
-        duration: recipes[0].duration,
-        isfavorite: recipes[0].isfavorite,
-        user: {
-          uuid: recipes[0].user_id,
-          name: recipes[0].name
-        },
-        category: {
-          title: recipes[0].category_title
-        },
-        country: {
-          name: recipes[0].country_name
-        }
-      })
+      for (let i = 0; i < recipes.length; i++) {
+        recipesData.push({
+          uuid: recipes[i].uuid,
+          title: recipes[i].title,
+          imageurl: recipes[i].imageurl,
+          portion: recipes[i].portion,
+          duration: recipes[i].duration,
+          isfavorite: recipes[i].isfavorite,
+          user: {
+            uuid: recipes[i].user_id,
+            name: recipes[i].name
+          },
+          category: {
+            title: recipes[i].category_title
+          },
+          country: {
+            name: recipes[i].country_name
+          }
+        })
+      }
+
       misc.response(response, 200, false, null, recipesData)
     } catch (error) {
       console.log(error.message) // in-development

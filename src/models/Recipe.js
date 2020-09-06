@@ -122,15 +122,15 @@ module.exports = {
       a.portion, 
       a.duration, 
       a.isfavorite, 
-      a.user_id, 
+      a.user_id,
+      b.name,
       c.title as category_title,
-      d.name as country_name,
-      b.name
+      d.name as country_name
       FROM recipes a
       INNER JOIN users b ON a.user_id = b.uuid
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE isfavorite = 1`
+      WHERE a.isfavorite = 1`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error())
