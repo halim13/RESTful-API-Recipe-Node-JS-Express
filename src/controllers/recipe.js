@@ -17,56 +17,6 @@ module.exports = {
     }
   },
 
-  showMe: async(request, response) => {
-    const page = parseInt(request.query.page) || 1
-    const search = request.query.search || ""
-    const limit = request.query.limit || 5
-    const offset = (page - 1) * limit
-    try {
-      const userId = request.params.userId
-      const user = await User.getUserByUuid(userId)
-      const userTotal = await User.getTotalByUserId(user[0].uuid)
-      const resultTotal = limit > 5 ? Math.ceil(userTotal[0].total / limit) : userTotal[0].total
-      const lastPage = Math.ceil(resultTotal / limit)
-      const prevPage = page === 1 ? 1 : page - 1
-      const nextPage = page === lastPage ? 1 : page + 1
-      const recipesData = await Recipe.me(offset, limit, search, userId)
-      let recipes = []
-      for (let i = 0; i < recipesData.length; i++) {   
-        recipes.push({
-          uuid: recipesData[i].uuid,
-          title: recipesData[i].title,
-          duration: recipesData[i].duration,
-          portion: recipesData[i].portion,
-          imageurl: recipesData[i].imageurl,
-          user: {
-            uuid: recipesData[i].user_id,
-            name: recipesData[i].name
-          },
-          category: {
-            title: recipesData[i].category_title
-          },
-          country: {
-            name: recipesData[i].country_name
-          }
-        })
-      }
-      const payloadPageDetail = {
-        total: resultTotal,
-        per_page: lastPage,
-        next_page: nextPage,
-        prev_page: prevPage,
-        current_page: page,
-        next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
-        prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
-      }
-      misc.responsePagination(response, 200, false, null, payloadPageDetail, recipes)
-    } catch(error) {
-      console.log(error.message) // in-development
-      misc.response(response, 500, true, "Server Error")
-    }
-  },
-
   show: async (request, response) => {
     const categoryId = request.params.categoryId
     const page = parseInt(request.query.page) || 1
@@ -116,6 +66,57 @@ module.exports = {
       misc.response(response, 500, true, "Server Error")
     }
   },
+
+  showMe: async(request, response) => {
+    const page = parseInt(request.query.page) || 1
+    const search = request.query.search || ""
+    const limit = request.query.limit || 5
+    const offset = (page - 1) * limit
+    try {
+      const userId = request.params.userId
+      const user = await User.getUserByUuid(userId)
+      const userTotal = await User.getTotalByUserId(user[0].uuid)
+      const resultTotal = limit > 5 ? Math.ceil(userTotal[0].total / limit) : userTotal[0].total
+      const lastPage = Math.ceil(resultTotal / limit)
+      const prevPage = page === 1 ? 1 : page - 1
+      const nextPage = page === lastPage ? 1 : page + 1
+      const recipesData = await Recipe.showMe(offset, limit, search, userId)
+      let recipes = []
+      for (let i = 0; i < recipesData.length; i++) {   
+        recipes.push({
+          uuid: recipesData[i].uuid,
+          title: recipesData[i].title,
+          duration: recipesData[i].duration,
+          portion: recipesData[i].portion,
+          imageurl: recipesData[i].imageurl,
+          user: {
+            uuid: recipesData[i].user_id,
+            name: recipesData[i].name
+          },
+          category: {
+            title: recipesData[i].category_title
+          },
+          country: {
+            name: recipesData[i].country_name
+          }
+        })
+      }
+      const payloadPageDetail = {
+        total: resultTotal,
+        per_page: lastPage,
+        next_page: nextPage,
+        prev_page: prevPage,
+        current_page: page,
+        next_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + nextPage)}`,
+        prev_url: `${process.env.BASE_URL}${request.originalUrl.replace("page=" + page, "page=" + prevPage)}`
+      }
+      misc.responsePagination(response, 200, false, null, payloadPageDetail, recipes)
+    } catch(error) {
+      console.log(error.message) // in-development
+      misc.response(response, 500, true, "Server Error")
+    }
+  },
+
 
   showDraft: async (request, response) => {
     const page = parseInt(request.query.page) || 1
@@ -206,8 +207,8 @@ module.exports = {
 
       function ingredients(i) {
         let ingredientsData = []
-        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
-        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split(",")
+        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split("*")
+        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split("*")
         for (let z = 0; z < t1.length; z++) {
           ingredientsData.push({
             uuid: t1[z],
@@ -385,8 +386,8 @@ module.exports = {
       }
       function ingredients(i) {
         let ingredientsData = []
-        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split(",")
-        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split(",")
+        let t1 = ingredientsGroup[i].uuid_child == null ? (ingredientsData = []) : ingredientsGroup[i].uuid_child.split("*")
+        let t2 = ingredientsGroup[i].body_child == null ? (ingredientsData = []) : ingredientsGroup[i].body_child.split("*")
         for (let z = 0; z < t1.length; z++) {
           ingredientsData.push({
             uuid: t1[z],
@@ -691,12 +692,6 @@ module.exports = {
       for (let i = 0; i < removeIngredientsGroup.length; i++) {
         let idIngredientsGroup = removeIngredientsGroup[i].uuid
         await Recipe.deleteIngredientsGroup(idIngredientsGroup)
-      }
-      // Create or Update Ingredients
-      for (let i = 0; i < ingredients.length; i++) {
-        let uuid = ingredients[i].uuid
-        let body = ingredients[i].item
-        await Recipe.storeIngredients(uuid, body, recipeId)
       }
       // Delete Ingredients
       for (let i = 0; i < removeIngredients.length; i++) {

@@ -4,7 +4,7 @@ module.exports = {
   
   getRecipes: () => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.* FROM recipes a`
+      const query = `SELECT * FROM recipes `
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -68,42 +68,16 @@ module.exports = {
 
   ingredientsGroup: recipeId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT DISTINCT a.body body_group, a.uuid uuid_group, 
-        GROUP_CONCAT(b.body SEPARATOR ',') body_child,
-        GROUP_CONCAT(b.uuid SEPARATOR ',') uuid_child 
+      const query = `SELECT DISTINCT 
+        a.body body_group, 
+        a.uuid uuid_group, 
+        GROUP_CONCAT(b.body SEPARATOR '*') body_child,
+        GROUP_CONCAT(b.uuid SEPARATOR '*') uuid_child 
         FROM ingredient_groups a
         INNER JOIN ingredients b ON a.uuid = b.ingredient_group_id 
         WHERE b.recipe_id = '${recipeId}'
         GROUP by a.id ORDER BY b.id ASC`
         connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  detail: uuid => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT 
-      a.uuid, 
-      a.title, 
-      a.imageurl, 
-      a.portion,
-      a.duration,
-      a.isfavorite,
-      a.user_id,
-      b.name,
-      c.title as category_title,
-      d.name as country_name
-      FROM recipes a
-      INNER JOIN users b ON a.user_id = b.uuid
-      LEFT JOIN categories c ON a.category_id = c.uuid
-      LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.uuid = '${uuid}'`
-      connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
         } else {
@@ -141,36 +115,6 @@ module.exports = {
     })
   },
 
-  me: (offset, limit, search, userId) => {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT 
-      a.uuid, 
-      a.title, 
-      a.duration, 
-      a.portion, 
-      a.imageurl, 
-      a.user_id,
-      b.name,
-      c.title as category_title,
-      d.name as country_name
-      FROM recipes a
-      INNER JOIN users b ON a.user_id = b.uuid
-      LEFT JOIN categories c ON a.category_id = c.uuid
-      LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.user_id = '${userId}' 
-      AND a.ispublished = '1' 
-      AND LOWER(a.title) LIKE '%${search}%'
-      LIMIT ${offset}, ${limit}`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
   show: (offset, limit, search, categoryId) => {
     return new Promise((resolve, reject) => {
       const query = `SELECT 
@@ -188,6 +132,64 @@ module.exports = {
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
       WHERE a.category_id = '${categoryId}' 
+      AND a.ispublished = '1' 
+      AND LOWER(a.title) LIKE '%${search}%'
+      LIMIT ${offset}, ${limit}`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  detail: uuid => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.imageurl, 
+      a.portion,
+      a.duration,
+      a.isfavorite,
+      a.user_id,
+      b.name,
+      c.title as category_title,
+      d.name as country_name
+      FROM recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
+      WHERE a.uuid = '${uuid}'`
+      connection.query(query, (error, result) => {
+        if (error) {
+          reject(new Error(error))
+        } else {
+          resolve(result)
+        }
+      })
+    })
+  },
+
+  showMe: (offset, limit, search, userId) => {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT 
+      a.uuid, 
+      a.title, 
+      a.duration, 
+      a.portion, 
+      a.imageurl, 
+      a.user_id,
+      b.name,
+      c.title as category_title,
+      d.name as country_name
+      FROM recipes a
+      INNER JOIN users b ON a.user_id = b.uuid
+      LEFT JOIN categories c ON a.category_id = c.uuid
+      LEFT JOIN food_countries d ON a.country_id = d.uuid
+      WHERE a.user_id = '${userId}' 
       AND a.ispublished = '1' 
       AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
@@ -254,23 +256,11 @@ module.exports = {
     })
   },
 
-  store: data => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO recipes SET ?`
-      connection.query(query, data, (error, result) => {
-        if(error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
   checkDemo: (userId) => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT COUNT(*) AS total FROM demo a 
-      INNER JOIN recipes c  ON c.uuid = a.recipe_id
+      const query = `SELECT COUNT(*) AS total 
+      FROM demo a 
+      INNER JOIN recipes c ON c.uuid = a.recipe_id
       WHERE a.user_id = '${userId}'`
       connection.query(query, (error, result) => {
         if (error) {
@@ -295,67 +285,158 @@ module.exports = {
     })
   },
 
+  store: data => {
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO recipes SET ?`
+        connection.query(query, data, (error, result) => {
+          if(error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                })
+              }
+              resolve(result)
+            })
+          }
+        })
+      })
+    })
+  },
+
   storeSearchSuggestions: (uuid, recipeId) => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO search_suggestions (uuid, views, recipe_id) VALUES('${uuid}', 1, '${recipeId}')`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO 
+        search_suggestions (uuid, views, recipe_id) 
+        VALUES('${uuid}', 1, '${recipeId}')`
+        connection.query(query, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                })
+              }
+              resolve(result)
+            })
+          }
+        })
       })
     })
   },
 
   storeSteps: (uuid, body, recipeId) => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO steps (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') ON DUPLICATE KEY UPDATE body = '${body}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO steps 
+        (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') 
+        ON DUPLICATE KEY UPDATE body = '${body}'`
+        connection.query(query, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                })
+              }
+              resolve(result)
+            })
+          }
+        })
       })
     })
   },
 
   storeStepsImage: (uuid, image, stepsId) => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO stepsimages (uuid, image, step_id) VALUES ('${uuid}', '${image}', '${stepsId}') ON DUPLICATE KEY UPDATE image = '${image}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
-      })
-    })
-  },
-
-  storeIngredients: (uuid, body, recipeId, ingredientGroupId) => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredients (uuid, body, recipe_id, ingredient_group_id) VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') ON DUPLICATE KEY UPDATE body = '${body}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO stepsimages 
+        (uuid, image, step_id) VALUES ('${uuid}', '${image}', '${stepsId}') 
+        ON DUPLICATE KEY UPDATE image = '${image}'`
+        connection.query(query, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                });
+              }
+              resolve(result)
+            });
+          }
+        })
       })
     })
   },
 
   storeIngredientsGroup: (uuid, body) => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO ingredient_groups (uuid, body) VALUES ('${uuid}', '${body}') ON DUPLICATE KEY UPDATE body = '${body}'`
-      connection.query(query, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO ingredient_groups 
+        (uuid, body) 
+        VALUES ('${uuid}', '${body}') 
+        ON DUPLICATE KEY UPDATE body = '${body}'`
+        connection.query(query, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                });
+              }
+              resolve(result)
+            });
+          }
+        })
+      })
+    })
+  },
+
+  storeIngredients: (uuid, body, recipeId, ingredientGroupId) => {
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO ingredients 
+        (uuid, body, recipe_id, ingredient_group_id) 
+        VALUES ('${uuid}', '${body}', '${recipeId}', '${ingredientGroupId}') 
+        ON DUPLICATE KEY UPDATE body = '${body}'`
+        connection.query(query, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                });
+              }
+              resolve(result)
+            });
+          }
+        })
       })
     })
   },
