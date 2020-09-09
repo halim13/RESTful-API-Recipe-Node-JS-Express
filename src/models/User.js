@@ -3,7 +3,15 @@ module.exports = {
 
   auth: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.name, a.email, a.avatar, a.bio FROM users a WHERE a.uuid = '${uuid}'`
+      const query = `SELECT 
+      id, 
+      uuid, 
+      name, 
+      email, 
+      avatar, 
+      bio 
+      FROM users  
+      WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -16,7 +24,7 @@ module.exports = {
 
   checkName: name => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.name FROM users a WHERE LOWER(a.name) = '${name}'`
+      const query = `SELECT name FROM users WHERE LOWER(name) = '${name}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -29,7 +37,7 @@ module.exports = {
 
   checkEmail: email => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.email FROM users a WHERE a.email = '${email}'`
+      const query = `SELECT email FROM users WHERE email = '${email}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -42,7 +50,7 @@ module.exports = {
 
   checkAvatarExists: userId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.avatar FROM users a WHERE a.id = '${userId}'`
+      const query = `SELECT avatar FROM users WHERE id = '${userId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -55,7 +63,7 @@ module.exports = {
 
   getUser: email => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.* FROM users a WHERE a.email = '${email}'`
+      const query = `SELECT * FROM users WHERE email = '${email}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -94,7 +102,7 @@ module.exports = {
 
   getCurrentProfile: uuid => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.* FROM users a WHERE a.uuid = '${uuid}'`
+      const query = `SELECT * FROM users WHERE uuid = '${uuid}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -120,7 +128,7 @@ module.exports = {
 
   login: email => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.id, a.uuid, a.password FROM users a WHERE email = ?`
+      const query = `SELECT id, uuid, password FROM users a WHERE email = ?`
       connection.query(query, email, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -132,14 +140,25 @@ module.exports = {
   },
 
   register: data => {
-    return new Promise((resolve, reject) => {
-      const query = `INSERT INTO users SET ?`
-      connection.query(query, data, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function(err) {
+      return new Promise((resolve, reject) => {
+        const query = `INSERT INTO users SET ?`
+        connection.query(query, data, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                });
+              }
+              resolve(result)
+            });
+          }
+        })
       })
     })
   },

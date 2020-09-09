@@ -23,7 +23,8 @@ module.exports = {
       GROUP_CONCAT(b.id SEPARATOR ',') steps_images_id,
       GROUP_CONCAT(b.uuid SEPARATOR ',') steps_images_uuid, 
       GROUP_CONCAT(b.image SEPARATOR ',') steps_images_body
-      FROM steps a LEFT JOIN stepsimages b ON a.uuid = b.step_id 
+      FROM steps a 
+      LEFT JOIN stepsimages b ON a.uuid = b.step_id 
       WHERE a.recipe_id = '${recipeId}'
       GROUP BY a.id ORDER BY b.id ASC`
       connection.query(query, (error, result) => {
@@ -273,14 +274,25 @@ module.exports = {
   },
 
   storeDemo: data => {
-    return new Promise((resolve, reject) => {
-      const query =  `INSERT INTO demo SET ?`
-      connection.query(query, data, (error, result) => {
-        if (error) {
-          reject(new Error(error))
-        } else {
-          resolve(result)
-        }
+    connection.beginTransaction(function() {
+      return new Promise((resolve, reject) => {
+        const query =  `INSERT INTO demo SET ?`
+        connection.query(query, data, (error, result) => {
+          if (error) {
+            return connection.rollback(function() {
+              reject(new Error(error))
+            })
+          } else {
+            connection.commit(function(err) {
+              if (err) {
+                return connection.rollback(function() {
+                  reject(new Error(err))
+                })
+              }
+              resolve(result)
+            })
+          }
+        })
       })
     })
   },
@@ -339,7 +351,8 @@ module.exports = {
     connection.beginTransaction(function(err) {
       return new Promise((resolve, reject) => {
         const query = `INSERT INTO steps 
-        (uuid, body, recipe_id) VALUES ('${uuid}', '${body}', '${recipeId}') 
+        (uuid, body, recipe_id) 
+        VALUES ('${uuid}', '${body}', '${recipeId}') 
         ON DUPLICATE KEY UPDATE body = '${body}'`
         connection.query(query, (error, result) => {
           if (error) {
@@ -495,7 +508,7 @@ module.exports = {
 
   getCountViews: recipeId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.views FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
+      const query = `SELECT views FROM search_suggestions WHERE recipe_id = '${recipeId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -508,7 +521,7 @@ module.exports = {
 
   checkReservedSearchSuggestions: recipeId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT a.recipe_id FROM search_suggestions a WHERE a.recipe_id = '${recipeId}'`
+      const query = `SELECT recipe_id FROM search_suggestions WHERE recipe_id = '${recipeId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
@@ -521,7 +534,7 @@ module.exports = {
 
   checkStepsImages: stepId => {
     return new Promise((resolve, reject) => {
-      const query = `SELECT * FROM stepsimages a WHERE a.step_id = '${stepId}'`
+      const query = `SELECT * FROM stepsimages WHERE step_id = '${stepId}'`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
