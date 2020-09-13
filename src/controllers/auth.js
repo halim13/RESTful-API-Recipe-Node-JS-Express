@@ -122,10 +122,9 @@ module.exports = {
         updated_at: updatedAt
       }
       await User.register(data)
-      const user = await User.getUser(email)
       const payload = {
         user: {
-          uuid: user[0].uuid
+          uuid: data.uuid
         }
       }
       const token = jwt.sign(

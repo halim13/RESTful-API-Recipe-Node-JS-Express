@@ -204,7 +204,7 @@ module.exports = {
     })
   },
 
-  showDraft: (offset, limit, search) => {
+  showDraft: (offset, limit, search, userId) => {
     return new Promise((resolve, reject) => {
       const query = `SELECT 
       a.uuid, 
@@ -221,7 +221,7 @@ module.exports = {
       INNER JOIN users b ON a.user_id = b.uuid
       LEFT JOIN categories c ON a.category_id = c.uuid
       LEFT JOIN food_countries d ON a.country_id = d.uuid
-      WHERE a.ispublished = '0'
+      WHERE a.ispublished = '0' AND a.user_id = '${userId}'
       AND LOWER(a.title) LIKE '%${search}%'
       LIMIT ${offset}, ${limit}`
       connection.query(query, (error, result) => {

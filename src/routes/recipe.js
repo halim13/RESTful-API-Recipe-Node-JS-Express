@@ -9,7 +9,7 @@ Route
 	.get("/", recipe.getRecipes)
 	.get("/show/me/:userId", recipe.showMe)
 	.get("/show/:categoryId", recipe.show)
-	.get("/show-draft", recipe.showDraft)
+	.get("/show-draft/:userId", recipe.showDraft)
 	.get("/detail/:recipeId", recipe.detail)
 	.get("/edit/:recipeId", recipe.edit)
 	.get("/popular-views/:recipeId", recipe.popularViews)
