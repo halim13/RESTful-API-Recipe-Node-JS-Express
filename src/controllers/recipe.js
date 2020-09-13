@@ -68,12 +68,12 @@ module.exports = {
   },
 
   showMe: async(request, response) => {
+    const userId = request.params.userId
     const page = parseInt(request.query.page) || 1
     const search = request.query.search || ""
     const limit = request.query.limit || 5
     const offset = (page - 1) * limit
     try {
-      const userId = request.params.userId
       const user = await User.getUserByUuid(userId)
       const userTotal = await User.getTotalByUserId(user[0].uuid)
       const resultTotal = limit > 5 ? Math.ceil(userTotal[0].total / limit) : userTotal[0].total
@@ -119,13 +119,14 @@ module.exports = {
 
 
   showDraft: async (request, response) => {
+    const userId = request.params.userId
     const page = parseInt(request.query.page) || 1
     const search = request.query.search || ""
     const limit = request.query.limit || 5
     const offset = (page - 1) * limit
  
     try {
-      const recipesData = await Recipe.showDraft(offset, limit, search)
+      const recipesData = await Recipe.showDraft(offset, limit, search, userId)
       let recipes = []
       for (let i = 0; i < recipesData.length; i++) {   
         recipes.push({
