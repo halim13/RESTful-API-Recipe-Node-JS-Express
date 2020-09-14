@@ -26,7 +26,7 @@ module.exports = {
       FROM steps a 
       LEFT JOIN stepsimages b ON a.uuid = b.step_id 
       WHERE a.recipe_id = '${recipeId}'
-      GROUP BY a.id ORDER BY b.id ASC`
+      GROUP BY a.id`
       connection.query(query, (error, result) => {
         if (error) {
           reject(new Error(error))
